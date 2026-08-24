@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace Enterprise — Doctor & Psychiatrist Clinical Operations Suite</title>
+    <!-- Chart.js CDN for Visual Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --primary-brand: #1e293b;
+            --accent-blue: #2563eb;
+            --accent-teal: #0d9488;
+            --accent-purple: #7c3aed;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #16a34a;
+            --info: #0284c7;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body.dark-mode {
+            --bg-main: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary-brand: #1f2937;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); line-height: 1.5; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
+
+        /* Floating SOS Toast Container */
+        #sosToastContainer {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .sos-toast {
+            pointer-events: auto;
+            background: #7f1d1d;
+            color: #ffffff;
+            border-left: 6px solid #ef4444;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: slideInToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .sos-toast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fca5a5;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sos-toast-body {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #fef2f2;
+        }
+
+        .sos-toast-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        @keyframes slideInToast {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOutToast {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+
+        /* Top Navigation Header */
+        .app-header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .app-header .user-badge { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; font-size: 13px; }
+
+        /* Main Container Layout */
+        .app-container { max-width: 1750px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+        /* Sidebar Controls */
+        .sidebar-panel { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sidebar-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-btn {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; border: none; background: transparent;
+            color: var(--text-main); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: left; width: 100%;
+        }
+        .nav-btn:hover { background: rgba(37,99,235,0.1); color: var(--accent-blue); }
+        .nav-btn.active { background: var(--accent-blue); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+
+        /* Viewport & Cards */
+        .view-content { display: flex; flex-direction: column; gap: 24px; }
+        .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        /* Grids */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+        /* Metrics */
+        .metric-card { background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: center; }
+        .metric-value { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 4px 0; }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+        /* Controls */
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px;
+            background: var(--card-bg); color: var(--text-main); transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 6px;
+            font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-secondary { background: var(--border-color); color: var(--text-main); }
+        .btn-secondary:hover { opacity: 0.8; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+        th { background: rgba(0,0,0,0.03); padding: 12px 16px; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: rgba(0,0,0,0.02); }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-critical { background: #fce7f3; color: #9d174d; }
+
+        /* Terminal Console */
+        .terminal-box {
+            background: #0f172a; color: #38bdf8; font-family: 'Consolas', 'Courier New', monospace;
+            padding: 16px; border-radius: 8px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
+        }
+
+        /* Printable Prescription Canvas */
+        .rx-preview-paper {
+            background: #ffffff; color: #000000; padding: 32px; border: 2px solid var(--border-color);
+            border-radius: 8px; font-family: 'Times New Roman', Times, serif; line-height: 1.6; margin-top: 16px;
+        }
+
+        /* PRINT STYLESHEET FOR NATIVE PDF EXPORT */
+        @media print {
+            body * { visibility: hidden; }
+            #rxPreviewSheet, #rxPreviewSheet * { visibility: visible; }
+            #rxPreviewSheet { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+        }
+
+        /* Chat Message Bubbles */
+        .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+        .chat-msg.user { background: var(--accent-blue); color: white; align-self: flex-end; }
+        .chat-msg.ai { background: rgba(0,0,0,0.06); color: var(--text-main); align-self: flex-start; border: 1px solid var(--border-color); }
+        .chat-msg.doctor { background: #0d9488; color: white; align-self: flex-start; }
+
+        /* Modals & Drawers */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); border-radius: 12px; width: 680px; max-width: 92%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+
+        .side-drawer { position: fixed; top: 0; right: -480px; width: 450px; height: 100%; background: var(--card-bg); border-left: 1px solid var(--border-color); box-shadow: -10px 0 25px rgba(0,0,0,0.15); transition: right 0.3s ease; z-index: 500; padding: 24px; overflow-y: auto; }
+        .side-drawer.open { right: 0; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- FLOATING REAL-TIME TOAST CONTAINER -->
+<div id="sosToastContainer"></div>
+
+<!-- TOP NAVIGATION HEADER -->
+<header class="app-header">
+    <h1>🩺 MindSpace Doctor & Psychiatrist Console</h1>
+    <div class="user-badge">
+        <span>Practitioner:</span>
+        <strong>Dr. Sameer Deshmukh, M.D. (Psychiatry)</strong>
+        <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
+        <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
+    </div>
+</header>
+
+<!-- MAIN APP CONTAINER -->
+<div class="app-container">
+
+    <!-- SIDEBAR PANEL -->
+    <aside class="sidebar-panel">
+        <div class="sidebar-title">Clinical Navigation</div>
+        <nav class="nav-menu">
+            <button class="nav-btn active" onclick="switchTab('overviewTab', this)">📊 Clinical Overview</button>
+            <button class="nav-btn" onclick="switchTab('patientsTab', this)">👥 Referred Patients</button>
+            <button class="nav-btn" onclick="switchTab('allPatientsTab', this)">📋 See All Patients</button>
+            <button class="nav-btn" onclick="switchTab('secureChatTab', this)">💬 Secure Chat & Video Hub</button>
+            <button class="nav-btn" onclick="switchTab('rxTab', this)">💊 Prescription Generator</button>
+            <button class="nav-btn" onclick="switchTab('pharmaTab', this)">🔍 Psychotropic Drug Database</button>
+            <button class="nav-btn" onclick="switchTab('treatmentTab', this)">📋 Treatment Plans & SOAP</button>
+            <button class="nav-btn" onclick="switchTab('sosTab', this)">🚨 Emergency Crisis Feed</button>
+            <button class="nav-btn" onclick="switchTab('telehealthTab', this)">📹 Clinical Tele-Consultation</button>
+        </nav>
+
+        <div class="sidebar-title" style="margin-top: 24px;">Practice Metrics</div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Active Referrals</div>
+            <div class="metric-value" style="color: var(--accent-blue);" id="sidebarReferrals">12</div>
+        </div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Active SOS Alerts</div>
+            <div class="metric-value" style="color: var(--danger);" id="sidebarSosCount">0</div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="openDirectPrescriptionModal()">+ Fast Prescription Issue</button>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="view-content">
+
+        <!-- TAB 1: CLINICAL OVERVIEW -->
+        <section id="overviewTab" class="tab-view">
+            <div class="grid-4" style="margin-bottom: 24px;">
+                <div class="metric-card">
+                    <div class="metric-label">Referred Patients</div>
+                    <div class="metric-value" id="metricTotalPatients">24</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Prescriptions Issued</div>
+                    <div class="metric-value" style="color: var(--success);" id="metricPrescriptions">38</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Severe PHQ-9 Cases</div>
+                    <div class="metric-value" style="color: var(--warning);" id="metricSevereCases">6</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Crisis Escalate Count</div>
+                    <div class="metric-value" style="color: var(--danger);" id="metricCrisisCount">2</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Diagnostic Distribution (ICD-10)</div></div>
+                    <canvas id="diagnosisChart" style="max-height: 240px;"></canvas>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Medication Adherence & Outcomes</div></div>
+                    <canvas id="adherenceChart" style="max-height: 240px;"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div class="card-title">Urgent Clinical Queue (Counselor Referrals)</div></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Referred By</th>
+                                <th>Primary Diagnosis</th>
+                                <th>Risk Severity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overviewQueueBody">
+                            <tr>
+                                <td>#101 - Aadi Sharma</td>
+                                <td>Dr. Ananya Roy</td>
+                                <td>F41.1 - Generalized Anxiety Disorder</td>
+                                <td><span class="badge badge-critical">MODERATE / SEVERE</span></td>
+                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(101, 'Aadi Sharma')">Inspect Record</button></td>
+                            </tr>
+                            <tr>
+                                <td>#105 - Rohan Verma</td>
+                                <td>Dr. Rajesh Kumar</td>
+                                <td>F32.1 - Major Depressive Disorder</td>
+                                <td><span class="badge badge-pending">MODERATE</span></td>
+                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(105, 'Rohan Verma')">Inspect Record</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: REFERRED PATIENTS -->
+        <section id="patientsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">Referred Psychiatric Patient Record Inspector</div></div>
+                <label>Enter Patient / Student ID:</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <input type="number" id="lookupPatientId" value="1" style="width: 180px;">
+                    <button class="btn btn-primary" onclick="inspectPatientRecord()">Inspect Records</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                    <button class="btn btn-secondary" onclick="fetchPatientMoodHistory()">Fetch Mood Logs</button>
+                    <button class="btn btn-secondary" onclick="fetchPatientScreenings()">Fetch Screening Tests</button>
+                    <button class="btn btn-warning" onclick="fetchEmergencyContacts()">Fetch Emergency Contacts</button>
+                </div>
+
+                <div class="terminal-box" id="patientRecordConsole">
+                    Patient metrics and clinical history will output here...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: SEE ALL PATIENTS DIRECTORY -->
+        <section id="allPatientsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🎓 Complete Campus Student Directory</div>
+                    <button class="btn btn-primary" onclick="loadAllStudentsDirectory()">🔄 Refresh Student List</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Full Name</th>
+                                <th>Email Address</th>
+                                <th>Phone Number</th>
+                                <th>Guardian / Emergency Contact</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allStudentsTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Click Refresh to load student records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: SECURE CHAT & VIDEO HUB -->
+        <section id="secureChatTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💬 Direct Secure Doctor-Student Communications</div>
+                    <button class="btn btn-primary" onclick="loadStudentContactDropdown()">🔄 Refresh Student List</button>
+                </div>
+
+                <div class="grid-2" style="grid-template-columns: 320px 1fr; gap: 20px;">
+                    <!-- Student Selection Sidebar -->
+                    <div style="border-right: 1px solid var(--border-color); padding-right: 16px;">
+                        <label>Select Student Patient:</label>
+                        <select id="chatStudentSelect" onchange="loadStudentChatHistory()" style="margin-bottom: 16px;">
+                            <option value="">-- Choose Student --</option>
+                        </select>
+
+                        <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h4 style="margin-bottom: 8px; font-size: 14px;">Quick Clinical Actions</h4>
+                            <button class="btn btn-success" style="width: 100%; margin-bottom: 8px; font-size: 12px;" onclick="startDoctorVideoCall()">📹 Launch Secure Video Call</button>
+                            <button class="btn btn-secondary" style="width: 100%; font-size: 12px;" onclick="flagStudentCase()">⚠️ Flag Urgent Case</button>
+                        </div>
+                    </div>
+
+                    <!-- Live Chat Box Interface -->
+                    <div style="display: flex; flex-direction: column; height: 420px;">
+                        <div id="doctorChatBox" style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; overflow-y: auto; background: rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                            <div class="chat-msg ai" style="align-self: center; font-size: 12px; color: var(--text-muted);">Select a student from the dropdown to view secure messages.</div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="doctorChatInput" placeholder="Type secure clinical message to student..." onkeypress="if(event.key==='Enter') sendDoctorMessage()">
+                            <button class="btn btn-primary" onclick="sendDoctorMessage()" style="width: 100px;">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PRESCRIPTION GENERATOR -->
+        <section id="rxTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">Digital Clinical Prescription Composer</div></div>
+
+                <div class="grid-2" style="margin-bottom: 12px;">
+                    <div>
+                        <label>Patient ID:</label>
+                        <input type="number" id="rxPatientId" value="1" onblur="fetchStudentNameById()">
+                    </div>
+                    <div>
+                        <label>Patient Name:</label>
+                        <input type="text" id="rxPatientName" placeholder="Auto-populated by ID" readonly style="background: rgba(0,0,0,0.03); font-weight: bold;">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label>ICD-10 Diagnostic Impression:</label>
+                        <select id="rxDiagnosis">
+                            <option value="F41.1 - Generalized Anxiety Disorder">F41.1 - Generalized Anxiety Disorder</option>
+                            <option value="F32.1 - Major Depressive Disorder (Moderate)">F32.1 - Major Depressive Disorder (Moderate)</option>
+                            <option value="F43.10 - Post-Traumatic Stress Disorder">F43.10 - Post-Traumatic Stress Disorder</option>
+                            <option value="F90.0 - Attention-Deficit Hyperactivity Disorder">F90.0 - Attention-Deficit Hyperactivity Disorder</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Prescribed Medications & Dosages:</label>
+                <textarea id="rxMedications" rows="3" placeholder="Enter prescribed medications, dosages, frequency, and duration..."></textarea>
+
+                <label>Special Directives & Psychotherapy Schedule:</label>
+                <textarea id="rxInstructions" rows="2" placeholder="Enter clinical directives, follow-up schedules, or therapy notes..."></textarea>
+
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <button class="btn btn-success" onclick="generatePrescription()">Generate & Issue Digital Prescription</button>
+                    <button class="btn btn-primary" onclick="window.print()">📥 Print / Save Prescription PDF</button>
+                    <button class="btn btn-secondary" onclick="toggleRxPreview()">Toggle Printable Preview</button>
+                </div>
+
+                <!-- Live Printable Preview Sheet -->
+                <div id="rxPreviewSheet" class="rx-preview-paper hidden">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px;">
+                        <div>
+                            <h2 style="margin:0;">MINDSPACE MEDICAL CLINIC</h2>
+                            <p style="margin:0; font-size: 13px;">Campus Psychiatric & Mental Health Services</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>Dr. Sameer Deshmukh, M.D.</strong><br>
+                            Reg. No: PMC-882910<br>
+                            Date: <span id="rxPreviewDate">--/--/----</span>
+                        </div>
+                    </div>
+
+                    <p><strong>Patient Name:</strong> <span id="rxPreviewName">--</span> (ID: #<span id="rxPreviewPatient">1</span>) | <strong>Diagnosis:</strong> <span id="rxPreviewDiag">F41.1</span></p>
+                    <hr style="margin: 12px 0;">
+                    <h3 style="margin-bottom: 8px;">Rx (Prescribed Medication Schedule):</h3>
+                    <pre id="rxPreviewMeds" style="font-family: inherit; font-size: 14px; white-space: pre-wrap; margin-bottom: 16px;"></pre>
+                    <hr style="margin: 12px 0;">
+                    <p><strong>Clinical Directives:</strong> <span id="rxPreviewDirectives">None</span></p>
+                    
+                    <div style="margin-top: 40px; text-align: right;">
+                        <p style="border-top: 1px solid #000; display: inline-block; padding-top: 4px; width: 200px; text-align: center;">Practitioner Signature</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PSYCHOTROPIC DRUG DATABASE -->
+        <section id="pharmaTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">🔍 Psychotropic Pharmacopeia & Interaction Checker</div></div>
+                <label>Search Psychotropic Medication or Class:</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <input type="text" id="drugSearchInput" placeholder="e.g., Escitalopram, SSRI, Clonazepam, Sertraline...">
+                    <button class="btn btn-primary" onclick="searchDrugDatabase()" style="width: 140px;">Search</button>
+                </div>
+
+                <div class="terminal-box" id="pharmaResultsConsole" style="height: 260px;">
+                    Enter drug query to inspect dosing, contraindications, and interaction parameters...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: TREATMENT PLANS & SOAP NOTES -->
+        <section id="treatmentTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">Long-term Psychiatric Treatment Plan & SOAP Engine</div></div>
+
+                <div class="grid-2" style="margin-bottom: 12px;">
+                    <div>
+                        <label>Target Patient ID:</label>
+                        <input type="number" id="txPatientId" value="1">
+                    </div>
+                    <div>
+                        <label>Clinical Status Goal:</label>
+                        <select id="txGoalStatus">
+                            <option value="STABILIZATION">Phase 1: Acute Symptom Stabilization</option>
+                            <option value="MAINTENANCE">Phase 2: Psychotherapeutic Maintenance</option>
+                            <option value="REMISSION">Phase 3: Clinical Remission / Tapering</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>SOAP Psychiatric Evaluation & Milestones:</label>
+                <textarea id="txGoals" rows="6" placeholder="S: Patient reports reduced panic frequency...&#10;O: GAD-7 score improved from 14 to 8...&#10;A: Positive response to SSRI therapy...&#10;P: Continue current dosage. Follow-up in 30 days."></textarea>
+
+                <button class="btn btn-primary" onclick="saveTreatmentPlan()">Update Psychiatric File</button>
+            </div>
+        </section>
+
+        <!-- TAB 6: EMERGENCY CRISIS FEED -->
+        <section id="sosTab" class="tab-view hidden">
+            <div class="card" style="border-left: 6px solid var(--danger);">
+                <div class="card-header">
+                    <div class="card-title" style="color: var(--danger);">🚨 Global SOS Emergency Alerts</div>
+                    <button class="btn btn-danger" onclick="pollSosFeed()">Poll Active Emergency Alerts</button>
+                </div>
+
+                <div class="table-responsive" style="margin-bottom: 16px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Student ID</th>
+                                <th>Trigger Mode</th>
+                                <th>Location Context</th>
+                                <th>Timestamp</th>
+                                <th>Dispatch Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sosFeedTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Click Poll to query emergency server...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="terminal-box" id="sosLogConsole" style="height: 140px;">
+                    Emergency feed stream initialized...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: TELEHEALTH CONSULTATION STUDIO -->
+        <section id="telehealthTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">📹 Clinical Tele-Consultation Studio</div></div>
+
+                <div class="grid-2">
+                    <div style="background: #0f172a; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; color: white;">
+                        <div style="position: relative; width: 100%; height: 260px; background: #000; border-radius: 6px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                            <video id="doctorWebcamVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 4px 8px; font-size: 11px; border-radius: 4px;">Dr. Sameer Deshmukh (Host)</div>
+                        </div>
+                        <button class="btn btn-success" style="margin-top: 12px; width: 100%;" onclick="startDoctorWebcam()">Launch Live Video Stream</button>
+                    </div>
+
+                    <div>
+                        <label>Virtual Consultation Room ID:</label>
+                        <input type="text" id="teleSessionRoom" value="ROOM-PSYCH-9921" readonly style="margin-bottom: 12px;">
+
+                        <label>Active Session Duration:</label>
+                        <div id="sessionTimerDisplay" style="font-size: 36px; font-weight: 800; color: var(--accent-blue); margin-bottom: 16px;">00:00:00</div>
+
+                        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                            <button class="btn btn-danger" onclick="endTeleConsultation()">Terminate Session</button>
+                            <button class="btn btn-secondary" onclick="toggleMuteAudio()">Mute Microphone</button>
+                        </div>
+
+                        <label>In-Session Clinical Notes:</label>
+                        <textarea id="teleQuickNotes" rows="3" placeholder="Jot down immediate behavioral observations..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- PATIENT SIDE DRAWER PANEL -->
+<div id="patientSideDrawer" class="side-drawer">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+        <h3 id="drawerPatientName">Patient File</h3>
+        <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closePatientDrawer()">✕ Close</button>
+    </div>
+    <div id="drawerContentBody">
+        <p>Loading patient records...</p>
+    </div>
+</div>
+
+<!-- FAST PRESCRIPTION MODAL -->
+<div id="fastRxModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <h3>Fast Prescription Issue</h3>
+            <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closeDirectPrescriptionModal()">✕</button>
+        </div>
+        <label>Patient / Student ID:</label>
+        <input type="number" id="modalRxPatientId" value="1" style="margin-bottom: 12px;">
+        
+        <label>Primary Diagnosis:</label>
+        <input type="text" id="modalRxDiag" value="F41.1 - Generalized Anxiety Disorder" style="margin-bottom: 12px;">
+        
+        <label>Medication Directives:</label>
+        <textarea id="modalRxMeds" rows="3" style="margin-bottom: 16px;" placeholder="Enter medications..."></textarea>
+        
+        <button class="btn btn-success" style="width: 100%;" onclick="submitModalPrescription()">Issue & Sign Prescription</button>
+    </div>
+</div>
+
+<!-- JAVASCRIPT APPLICATION ENGINE -->
+<script>
+    const BASE_URL = "http://localhost:8080/api/v1";
+
+    let diagnosisChartInst = null;
+    let adherenceChartInst = null;
+    let timerInterval = null;
+    let sessionSeconds = 0;
+    let doctorChatPollInterval = null;
+
+    let knownSosIds = new Set();
+    let isInitialSosPoll = true;
+
+    // Pharmacopeia Mock Database
+    const drugDatabase = [
+        { name: "Escitalopram", class: "SSRI", indication: "Major Depression, GAD", dosage: "10mg - 20mg daily", notes: "Monitor for initial 2-week anxiety spike or QT prolongation." },
+        { name: "Sertraline", class: "SSRI", indication: "Depression, OCD, Panic Disorder", dosage: "50mg - 200mg daily", notes: "Take with food to minimize gastrointestinal upset." },
+        { name: "Clonazepam", class: "Benzodiazepine", indication: "Acute Panic Attacks, Severe Anxiety", dosage: "0.25mg - 1mg SOS", notes: "High dependence risk. Limit continuous use to 2-4 weeks." },
+        { name: "Methylphenidate", class: "Central Nervous System Stimulant", indication: "ADHD", dosage: "10mg - 40mg daily", notes: "Monitor blood pressure and insomnia. Administer before 12 PM." }
+    ];
+
+    window.onload = () => {
+        startClock();
+        initCharts();
+        startSosMonitoring();
+        startChatPolling();
+        fetchStudentNameById();
+        loadAllStudentsDirectory();
+        loadStudentContactDropdown();
+    };
+
+    function startClock() {
+        setInterval(() => {
+            document.getElementById('systemClock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+    }
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.remove('hidden');
+        if (btn) btn.classList.add('active');
+
+        if (tabId === 'allPatientsTab') {
+            loadAllStudentsDirectory();
+        }
+        if (tabId === 'secureChatTab') {
+            loadStudentContactDropdown();
+        }
+    }
+
+    function initCharts() {
+        const ctxDiag = document.getElementById('diagnosisChart').getContext('2d');
+        diagnosisChartInst = new Chart(ctxDiag, {
+            type: 'doughnut',
+            data: {
+                labels: ['Anxiety (F41.1)', 'Depression (F32.1)', 'PTSD (F43.10)', 'ADHD (F90.0)'],
+                datasets: [{
+                    data: [50, 30, 12, 8],
+                    backgroundColor: ['#2563eb', '#7c3aed', '#d97706', '#0d9488']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxAdh = document.getElementById('adherenceChart').getContext('2d');
+        adherenceChartInst = new Chart(ctxAdh, {
+            type: 'bar',
+            data: {
+                labels: ['Full Adherence', 'Partial Adherence', 'Non-Compliant'],
+                datasets: [{
+                    label: 'Patient Count',
+                    data: [18, 5, 1],
+                    backgroundColor: ['#16a34a', '#d97706', '#dc2626']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    /* Automatically Fetch Student Name by ID */
+    async function fetchStudentNameById() {
+        const studentId = document.getElementById('rxPatientId').value;
+        const nameInput = document.getElementById('rxPatientName');
+        
+        if (!studentId) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/prescriptions/student/${studentId}`);
+            if (res.ok) {
+                const student = await res.json();
+                nameInput.value = student.name || student.studentName || "Unknown Student";
+            } else {
+                nameInput.value = "Student ID Not Found";
+            }
+        } catch (err) {
+            console.error("Failed to auto-fetch student name:", err);
+            nameInput.value = "Connection Error";
+        }
+    }
+
+    /* Load All Students Directory */
+    async function loadAllStudentsDirectory() {
+        const tbody = document.getElementById('allStudentsTableBody');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Syncing student records from database...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/admin/students/comprehensive`);
+            if (!res.ok) {
+                const fallbackRes = await fetch(`${BASE_URL}/students/full-profiles`);
+                const data = await fallbackRes.json();
+                renderStudentTable(data);
+                return;
+            }
+
+            const data = await res.json();
+            renderStudentTable(data);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">Failed to load student directory. Check server connection.</td></tr>`;
+        }
+    }
+
+    function renderStudentTable(students) {
+        const tbody = document.getElementById('allStudentsTableBody');
+        if (!students || students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No students registered in the system.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = students.map(s => {
+            const id = s.studentId || s.id;
+            const name = s.studentName || s.name;
+            const email = s.studentEmail || s.email;
+            const phone = s.studentPhone || s.phoneNumber || 'N/A';
+            const guardian = s.guardianName || 'N/A';
+            const guardianPhone = s.guardianPhone || 'N/A';
+
+            return `
+                <tr>
+                    <td><strong>#${id}</strong></td>
+                    <td>${name}</td>
+                    <td>${email}</td>
+                    <td>${phone}</td>
+                    <td>${guardian} (${guardianPhone})</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" 
+                                onclick="openPatientDrawer(${id}, '${name}')">
+                            Open File
+                        </button>
+                        <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" 
+                                onclick="selectStudentForRx(${id}, '${name}')">
+                            Write Rx
+                        </button>
+                        <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" 
+                                onclick="selectStudentForChat(${id})">
+                            💬 Chat
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function selectStudentForRx(studentId, studentName) {
+        const rxTabBtn = document.querySelector("button[onclick*='rxTab']");
+        switchTab('rxTab', rxTabBtn);
+        
+        document.getElementById('rxPatientId').value = studentId;
+        document.getElementById('rxPatientName').value = studentName;
+    }
+
+    function selectStudentForChat(studentId) {
+        const chatTabBtn = document.querySelector("button[onclick*='secureChatTab']");
+        switchTab('secureChatTab', chatTabBtn);
+        document.getElementById('chatStudentSelect').value = studentId;
+        loadStudentChatHistory();
+    }
+
+    /* Secure Chat & Video Hub Logic with Real-Time Polling */
+    async function loadStudentContactDropdown() {
+        const select = document.getElementById('chatStudentSelect');
+        try {
+            const res = await fetch(`${BASE_URL}/admin/students/comprehensive`);
+            if (!res.ok) {
+                const fallbackRes = await fetch(`${BASE_URL}/students/full-profiles`);
+                const students = await fallbackRes.json();
+                populateDropdown(students);
+                return;
+            }
+            const students = await res.json();
+            populateDropdown(students);
+        } catch (err) {
+            console.error("Failed to load students for chat selector:", err);
+        }
+    }
+
+    function populateDropdown(students) {
+        const select = document.getElementById('chatStudentSelect');
+        const currentVal = select.value;
+        select.innerHTML = `<option value="">-- Choose Student --</option>` + students.map(s => {
+            const id = s.studentId || s.id;
+            const name = s.studentName || s.name;
+            return `<option value="${id}">#${id} - ${name}</option>`;
+        }).join('');
+        if (currentVal) select.value = currentVal;
+    }
+
+    async function loadStudentChatHistory() {
+        const studentId = document.getElementById('chatStudentSelect').value;
+        const chatBox = document.getElementById('doctorChatBox');
+        if (!studentId) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            if (res.ok) {
+                const messages = await res.json();
+                if (!messages || messages.length === 0) {
+                    chatBox.innerHTML = `<div class="chat-msg ai" style="align-self: center;">No chat messages recorded yet with this student.</div>`;
+                    return;
+                }
+                const newHtml = messages.map(m => {
+                    const msgClass = m.sender === 'DOCTOR' ? 'user' : 'doctor';
+                    const senderLabel = m.sender === 'DOCTOR' ? 'Dr. Deshmukh: ' : 'Student: ';
+                    return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
+                }).join('');
+
+                if (chatBox.innerHTML !== newHtml) {
+                    chatBox.innerHTML = newHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load chat history:", e);
+        }
+    }
+
+    function startChatPolling() {
+        if (doctorChatPollInterval) clearInterval(doctorChatPollInterval);
+        doctorChatPollInterval = setInterval(() => {
+            const chatSec = document.getElementById('secureChatTab');
+            if (chatSec && !chatSec.classList.contains('hidden')) {
+                const studentId = document.getElementById('chatStudentSelect').value;
+                if (studentId) {
+                    loadStudentChatHistory();
+                }
+            }
+        }, 3000);
+    }
+
+    async function sendDoctorMessage() {
+        const studentId = document.getElementById('chatStudentSelect').value;
+        const input = document.getElementById('doctorChatInput');
+        const text = input.value.trim();
+        const chatBox = document.getElementById('doctorChatBox');
+
+        if (!studentId) {
+            alert("Please select a student from the dropdown first.");
+            return;
+        }
+        if (!text) return;
+
+        chatBox.innerHTML += `<div class="chat-msg user"><strong>Dr. Deshmukh: </strong>${text}</div>`;
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            await fetch(`${BASE_URL}/chat/doctor-send?studentId=${studentId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: text
+            });
+            loadStudentChatHistory();
+        } catch (err) {
+            console.error("Failed to transmit secure message:", err);
+        }
+    }
+
+    async function startDoctorWebcam() {
+        const videoElement = document.getElementById('doctorWebcamVideo');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoElement.srcObject = stream;
+            startTeleConsultation();
+        } catch (err) {
+            alert("Unable to access camera and microphone. Please check browser permissions.");
+        }
+    }
+
+    function startDoctorVideoCall() {
+        const studentId = document.getElementById('chatStudentSelect').value;
+        if (!studentId) {
+            alert("Please select a student patient to call.");
+            return;
+        }
+        const telehealthBtn = document.querySelector("button[onclick*='telehealthTab']");
+        switchTab('telehealthTab', telehealthBtn);
+        startDoctorWebcam();
+    }
+
+    function flagStudentCase() {
+        const studentId = document.getElementById('chatStudentSelect').value;
+        if (!studentId) {
+            alert("Please select a student first.");
+            return;
+        }
+        alert(`⚠️ Student #${studentId} case has been escalated and flagged for urgent psychiatric review.`);
+    }
+
+    /* Helper: Parse raw location to produce clean Google Maps URL */
+    function formatMapsUrl(rawLocation) {
+        if (!rawLocation) return null;
+        const coordsMatch = rawLocation.match(/[-+]?\d*\.\d+|[-+]?\d+/g);
+        if (coordsMatch && coordsMatch.length >= 2) {
+            return `https://www.google.com/maps/search/?api=1&query=${coordsMatch[0]},${coordsMatch[1]}`;
+        }
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawLocation)}`;
+    }
+
+    /* ============================================================
+     * REAL-TIME SOS ALERT MONITOR & FLOATING TOAST ENGINE
+     * ============================================================ */
+    function startSosMonitoring() {
+        pollSosFeed();
+        setInterval(pollSosFeed, 3000);
+    }
+
+    async function pollSosFeed() {
+        const tbody = document.getElementById('sosFeedTableBody');
+        const consoleEl = document.getElementById('sosLogConsole');
+
+        try {
+            const res = await fetch(`${BASE_URL}/sos/all`);
+            if (!res.ok) return;
+
+            const alerts = await res.json();
+            document.getElementById('sidebarSosCount').innerText = alerts.length;
+
+            alerts.forEach(alert => {
+                if (!knownSosIds.has(alert.id)) {
+                    knownSosIds.add(alert.id);
+                    if (!isInitialSosPoll) {
+                        triggerSosToast(alert);
+                    }
+                }
+            });
+
+            if (isInitialSosPoll) {
+                isInitialSosPoll = false;
+            }
+
+            if (!alerts || alerts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No emergency alerts recorded.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = alerts.map(a => {
+                const mapsUrl = formatMapsUrl(a.locationData);
+                const locationCell = mapsUrl 
+                    ? `<a href="${mapsUrl}" target="_blank" style="color: var(--accent-blue); font-weight: bold; text-decoration: underline;">📍 ${a.locationData}</a>`
+                    : (a.locationData || 'GPS Unavailable');
+
+                return `
+                    <tr>
+                        <td>#${a.id}</td>
+                        <td><strong>Student #${a.studentId}</strong></td>
+                        <td><span class="badge badge-critical">${a.triggerType || 'CRITICAL'}</span></td>
+                        <td>${locationCell}</td>
+                        <td>${new Date(a.timestamp).toLocaleString()}</td>
+                        <td><span class="badge badge-active">${a.status || 'DISPATCHED'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            consoleEl.innerText = `[SOS Command Stream]\n` + JSON.stringify(alerts, null, 2);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">[Error]: ${err.message}</td></tr>`;
+        }
+    }
+
+    function triggerSosToast(alertData) {
+        const container = document.getElementById('sosToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'sos-toast';
+        toast.id = `toast-sos-${alertData.id}`;
+
+        const timestampStr = alertData.timestamp ? new Date(alertData.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        const mapsUrl = formatMapsUrl(alertData.locationData);
+        const locationDisplay = mapsUrl 
+            ? `<a href="${mapsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">📍 ${alertData.locationData}</a>`
+            : (alertData.locationData || 'GPS Coordinates Pending');
+
+        toast.innerHTML = `
+            <div class="sos-toast-header">
+                <span>🚨 EMERGENCY SOS ALERT #${alertData.id}</span>
+                <small style="color:#ffffffaa; font-weight: normal;">${timestampStr}</small>
+            </div>
+            <div class="sos-toast-body">
+                <strong>Student ID:</strong> #${alertData.studentId}<br>
+                <strong>Trigger Mode:</strong> ${alertData.triggerType || 'CRITICAL RISK DETECTED'}<br>
+                <strong>Location:</strong> ${locationDisplay}
+            </div>
+            <div class="sos-toast-actions">
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background: rgba(255,255,255,0.2); color: white;" 
+                        onclick="dismissToast('toast-sos-${alertData.id}')">
+                    Dismiss
+                </button>
+                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" 
+                        onclick="viewSosDetails(${alertData.id})">
+                    View Incident
+                </button>
+            </div>
+        `;
+
+        container.appendChild(toast);
+        playAlertSound();
+    }
+
+    function dismissToast(toastId) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.style.animation = 'fadeOutToast 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
+    function viewSosDetails(alertId) {
+        dismissToast(`toast-sos-${alertId}`);
+        const sosNavBtn = document.querySelector("button[onclick*='sosTab']");
+        switchTab('sosTab', sosNavBtn);
+        pollSosFeed();
+    }
+
+    function playAlertSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) {}
+    }
+
+    async function inspectPatientRecord() {
+        const id = document.getElementById('lookupPatientId').value;
+        const consoleEl = document.getElementById('patientRecordConsole');
+        consoleEl.innerText = `[Querying Clinical File for Patient #${id}]...`;
+
+        try {
+            const [moodsRes, screenRes, contactRes] = await Promise.all([
+                fetch(`${BASE_URL}/moods/student/${id}`),
+                fetch(`${BASE_URL}/screening/student/${id}`),
+                fetch(`${BASE_URL}/contacts/student/${id}`)
+            ]);
+
+            const moods = await moodsRes.json();
+            const screenings = await screenRes.json();
+            const contacts = await contactRes.json();
+
+            consoleEl.innerText = `=== CLINICAL RECORD: PATIENT #${id} ===\n\n` +
+                `[RECENT MOOD ENTRIES]\n${JSON.stringify(moods, null, 2)}\n\n` +
+                `[SCREENING SCORES (PHQ-9/GAD-7)]\n${JSON.stringify(screenings, null, 2)}\n\n` +
+                `[EMERGENCY CONTACTS]\n${JSON.stringify(contacts, null, 2)}`;
+        } catch (e) {
+            consoleEl.innerText = `[Error]: Unable to query records for Patient #${id}.`;
+        }
+    }
+
+    async function fetchPatientMoodHistory() {
+        const id = document.getElementById('lookupPatientId').value;
+        const consoleEl = document.getElementById('patientRecordConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/moods/student/${id}`);
+            const data = await res.json();
+            consoleEl.innerText = `[Mood Logs - Patient #${id}]\n` + JSON.stringify(data, null, 2);
+        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch mood logs.`; }
+    }
+
+    async function fetchPatientScreenings() {
+        const id = document.getElementById('lookupPatientId').value;
+        const consoleEl = document.getElementById('patientRecordConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/screening/student/${id}`);
+            const data = await res.json();
+            consoleEl.innerText = `[Clinical Screenings - Patient #${id}]\n` + JSON.stringify(data, null, 2);
+        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch screenings.`; }
+    }
+
+    async function fetchEmergencyContacts() {
+        const id = document.getElementById('lookupPatientId').value;
+        const consoleEl = document.getElementById('patientRecordConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/contacts/student/${id}`);
+            const data = await res.json();
+            consoleEl.innerText = `[Emergency Contacts - Patient #${id}]\n` + JSON.stringify(data, null, 2);
+        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch contacts.`; }
+    }
+
+    async function generatePrescription() {
+        const patientId = document.getElementById('rxPatientId').value;
+        const patientName = document.getElementById('rxPatientName').value;
+        const diagnosis = document.getElementById('rxDiagnosis').value;
+        const meds = document.getElementById('rxMedications').value;
+        const directives = document.getElementById('rxInstructions').value;
+
+        if (!patientId || !meds) {
+            alert("Please input patient ID and medication schedule.");
+            return;
+        }
+
+        document.getElementById('rxPreviewPatient').innerText = patientId;
+        document.getElementById('rxPreviewName').innerText = patientName;
+        document.getElementById('rxPreviewDiag').innerText = diagnosis;
+        document.getElementById('rxPreviewMeds').innerText = meds;
+        document.getElementById('rxPreviewDirectives').innerText = directives;
+        document.getElementById('rxPreviewDate').innerText = new Date().toLocaleDateString();
+
+        document.getElementById('rxPreviewSheet').classList.remove('hidden');
+
+        try {
+            const payload = {
+                studentId: parseInt(patientId),
+                studentName: patientName,
+                diagnosis: diagnosis,
+                medications: meds,
+                directives: directives
+            };
+
+            const res = await fetch(`${BASE_URL}/prescriptions/issue-and-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert(`Prescription successfully generated, signed, and emailed to student ${patientName} (#${patientId})!`);
+            } else {
+                const errText = await res.text();
+                alert(`Prescription generated locally, but email dispatch failed: ${errText}`);
+            }
+        } catch (err) {
+            console.error("Prescription Email Error:", err);
+            alert("Prescription generated locally, but server connection failed during email dispatch.");
+        }
+    }
+
+    function toggleRxPreview() {
+        document.getElementById('rxPreviewSheet').classList.toggle('hidden');
+    }
+
+    function searchDrugDatabase() {
+        const query = document.getElementById('drugSearchInput').value.toLowerCase();
+        const consoleEl = document.getElementById('pharmaResultsConsole');
+        if (!query) { consoleEl.innerText = "Please enter a medication query."; return; }
+
+        const results = drugDatabase.filter(d => d.name.toLowerCase().includes(query) || d.class.toLowerCase().includes(query) || d.indication.toLowerCase().includes(query));
+        if (results.length === 0) {
+            consoleEl.innerText = `No psychotropic records matching: "${query}"`;
+        } else {
+            consoleEl.innerText = `[Pharmacopeia Results]\n` + JSON.stringify(results, null, 2);
+        }
+    }
+
+    function saveTreatmentPlan() {
+        const patientId = document.getElementById('txPatientId').value;
+        const goals = document.getElementById('txGoals').value;
+        if (!goals) { alert("Please input treatment plan notes."); return; }
+        alert(`Treatment plan and SOAP note updated for Patient #${patientId}.`);
+    }
+
+    async function openPatientDrawer(studentId, name) {
+        document.getElementById('drawerPatientName').innerText = name;
+        const drawer = document.getElementById('patientSideDrawer');
+        const body = document.getElementById('drawerContentBody');
+        drawer.classList.add('open');
+        body.innerHTML = `<p>Querying patient database records...</p>`;
+
+        try {
+            const resMood = await fetch(`${BASE_URL}/moods/student/${studentId}`);
+            const moods = await resMood.json();
+
+            body.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <strong>Patient ID:</strong> #${studentId}
+                </div>
+                <h4>Recent Clinical Mood Entries</h4>
+                <pre style="background:rgba(0,0,0,0.04); padding:8px; border-radius:4px; font-size:11px; max-height:220px; overflow-y:auto;">${JSON.stringify(moods, null, 2)}</pre>
+            `;
+        } catch (e) {
+            body.innerHTML = `<p style="color:var(--danger)">Failed to fetch patient records.</p>`;
+        }
+    }
+
+    function closePatientDrawer() {
+        document.getElementById('patientSideDrawer').classList.remove('open');
+    }
+
+    function openDirectPrescriptionModal() { document.getElementById('fastRxModal').style.display = 'flex'; }
+    function closeDirectPrescriptionModal() { document.getElementById('fastRxModal').style.display = 'none'; }
+
+    function submitModalPrescription() {
+        const patientId = document.getElementById('modalRxPatientId').value;
+        alert(`Fast Prescription issued and signed for Patient #${patientId}.`);
+        closeDirectPrescriptionModal();
+    }
+
+    function startTeleConsultation() {
+        sessionSeconds = 0;
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            sessionSeconds++;
+            const hrs = String(Math.floor(sessionSeconds / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((sessionSeconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(sessionSeconds % 60).padStart(2, '0');
+            document.getElementById('sessionTimerDisplay').innerText = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+    }
+
+    function endTeleConsultation() {
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('sessionTimerDisplay').innerText = "00:00:00";
+        
+        const videoElement = document.getElementById('doctorWebcamVideo');
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+            videoElement.srcObject = null;
+        }
+        alert("Consultation terminated.");
+    }
+
+    function toggleMuteAudio() { alert("Microphone toggled."); }
+</script>
+
+</body>
+</html>

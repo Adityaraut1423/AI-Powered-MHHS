@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace Enterprise — Clinical Operations Suite</title>
+    <!-- Chart.js CDN for Visual Clinical Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --primary-brand: #1e293b;
+            --accent-blue: #2563eb;
+            --accent-teal: #0d9488;
+            --accent-indigo: #4f46e5;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #16a34a;
+            --info: #0284c7;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body.dark-mode {
+            --bg-main: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary-brand: #1f2937;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); line-height: 1.5; transition: background 0.3s, color 0.3s; }
+
+        /* Floating SOS Toast Container */
+        #sosToastContainer {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .sos-toast {
+            pointer-events: auto;
+            background: #7f1d1d;
+            color: #ffffff;
+            border-left: 6px solid #ef4444;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: slideInToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .sos-toast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fca5a5;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sos-toast-body {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #fef2f2;
+        }
+
+        .sos-toast-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        @keyframes slideInToast {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOutToast {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+
+        /* Top Navigation Header */
+        .app-header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .app-header .user-badge { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; font-size: 13px; }
+
+        /* Main Container Layout */
+        .app-container { max-width: 1750px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+        /* Sidebar Controls */
+        .sidebar-panel { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sidebar-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-btn {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; border: none; background: transparent;
+            color: var(--text-main); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: left; width: 100%;
+        }
+        .nav-btn:hover { background: rgba(37,99,235,0.1); color: var(--accent-blue); }
+        .nav-btn.active { background: var(--accent-blue); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+
+        /* Viewport & Cards */
+        .view-content { display: flex; flex-direction: column; gap: 24px; }
+        .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        /* Grids */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+        /* Metrics */
+        .metric-card { background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: center; }
+        .metric-value { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 4px 0; }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+        /* Controls */
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px;
+            background: var(--card-bg); color: var(--text-main); transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 6px;
+            font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-secondary { background: var(--border-color); color: var(--text-main); }
+        .btn-secondary:hover { opacity: 0.8; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+        th { background: rgba(0,0,0,0.03); padding: 12px 16px; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: rgba(0,0,0,0.02); }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-requested { background: #fef3c7; color: #92400e; }
+        .badge-confirmed { background: #dcfce7; color: #166534; }
+        .badge-completed { background: #f1f5f9; color: #475569; }
+        .badge-cancelled { background: #fee2e2; color: #991b1b; }
+        .badge-critical { background: #fce7f3; color: #9d174d; }
+
+        /* Terminal Console & Chat Bubbles */
+        .terminal-box {
+            background: #0f172a; color: #38bdf8; font-family: 'Consolas', 'Courier New', monospace;
+            padding: 16px; border-radius: 8px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
+        }
+        .chat-box { height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; overflow-y: auto; background: rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px; }
+        .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+        .chat-msg.user { background: var(--accent-blue); color: white; align-self: flex-end; }
+        .chat-msg.student { background: rgba(0,0,0,0.06); color: var(--text-main); align-self: flex-start; border: 1px solid var(--border-color); }
+
+        /* Modals & Drawers */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); border-radius: 12px; width: 680px; max-width: 92%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+
+        .side-drawer { position: fixed; top: 0; right: -480px; width: 450px; height: 100%; background: var(--card-bg); border-left: 1px solid var(--border-color); box-shadow: -10px 0 25px rgba(0,0,0,0.15); transition: right 0.3s ease; z-index: 500; padding: 24px; overflow-y: auto; }
+        .side-drawer.open { right: 0; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- FLOATING REAL-TIME TOAST CONTAINER -->
+<div id="sosToastContainer"></div>
+
+<!-- TOP NAVIGATION HEADER -->
+<header class="app-header">
+    <h1>🏥 MindSpace Clinical Portal</h1>
+    <div class="user-badge">
+        <span>Practitioner:</span>
+        <select id="activeCounselorId" onchange="switchCounselorContext()" style="width: 190px; padding: 4px 8px; border-radius: 4px; color: #000;">
+            <option value="1">Dr. Ananya Roy (ID #1)</option>
+            <option value="2">Dr. Rajesh Kumar (ID #2)</option>
+            <option value="3">Dr. Priya Sharma (ID #3)</option>
+        </select>
+        <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
+        <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
+    </div>
+</header>
+
+<!-- MAIN APP CONTAINER -->
+<div class="app-container">
+
+    <!-- SIDEBAR PANEL -->
+    <aside class="sidebar-panel">
+        <div class="sidebar-title">Clinical Navigation</div>
+        <nav class="nav-menu">
+            <button class="nav-btn active" onclick="switchTab('overviewTab', this)">📊 Clinical Overview</button>
+            <button class="nav-btn" onclick="switchTab('appointmentsTab', this)">📅 Appointment Queue</button>
+            <button class="nav-btn" onclick="switchTab('studentChatTab', this)">💬 Talk with Students</button> <!-- NEW OPTION -->
+            <button class="nav-btn" onclick="switchTab('patientsTab', this)">👤 Patient Diagnostics</button>
+            <button class="nav-btn" onclick="switchTab('notesTab', this)">📝 SOAP & Treatment Plan</button>
+            <button class="nav-btn" onclick="switchTab('sosTab', this)">🚨 Crisis Command Center</button>
+            <button class="nav-btn" onclick="switchTab('telehealthTab', this)">📹 Tele-Consultation Studio</button>
+            <button class="nav-btn" onclick="switchTab('dsmTab', this)">📚 DSM-5 / ICD-10 Search</button>
+            <button class="nav-btn" onclick="switchTab('analyticsTab', this)">📈 Aggregate Metrics</button>
+        </nav>
+
+        <div class="sidebar-title" style="margin-top: 24px;">Queue Metrics</div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Pending Appointments</div>
+            <div class="metric-value" id="sidebarPendingCount">0</div>
+        </div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Active SOS Alerts</div>
+            <div class="metric-value" style="color: var(--danger);" id="sidebarSosCount">0</div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="openQuickScheduleModal()">+ Direct Scheduling</button>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="view-content">
+
+        <!-- TAB 1: CLINICAL OVERVIEW -->
+        <section id="overviewTab" class="tab-view">
+            <div class="grid-4" style="margin-bottom: 24px;">
+                <div class="metric-card">
+                    <div class="metric-label">Active Patients</div>
+                    <div class="metric-value" id="metricTotalStudents">128</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Completed Sessions</div>
+                    <div class="metric-value" style="color: var(--success);" id="metricCompleted">42</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">High-Risk Captures</div>
+                    <div class="metric-value" style="color: var(--warning);" id="metricHighRisk">8</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Crisis Interventions</div>
+                    <div class="metric-value" style="color: var(--danger);" id="metricCrisis">3</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Campus Risk Profile Breakdown</div></div>
+                    <canvas id="riskProfileChart" style="max-height: 240px;"></canvas>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Monthly Consultation Volume</div></div>
+                    <canvas id="consultationVolumeChart" style="max-height: 240px;"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div class="card-title">Active Clinical Worklist</div></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Context</th>
+                                <th>Risk Indicator</th>
+                                <th>Last Screening</th>
+                                <th>Action Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overviewWorklistBody">
+                            <tr>
+                                <td>#101 - Aadi Sharma</td>
+                                <td><span class="badge badge-critical">MODERATE RISK</span></td>
+                                <td>PHQ-9 Score: 12 (Moderate)</td>
+                                <td>Follow-up Scheduled</td>
+                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(101, 'Aadi Sharma')">Inspect Drawer</button></td>
+                            </tr>
+                            <tr>
+                                <td>#102 - Priya Verma</td>
+                                <td><span class="badge badge-confirmed">LOW RISK</span></td>
+                                <td>GAD-7 Score: 4 (Minimal)</td>
+                                <td>Stable State</td>
+                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(102, 'Priya Verma')">Inspect Drawer</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: APPOINTMENTS -->
+        <section id="appointmentsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Appointment Lifecycle Queue</div>
+                    <button class="btn btn-primary" onclick="loadAppointments()">🔄 Refresh Appointments</button>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <button class="btn btn-secondary" onclick="filterAppointments('ALL')">All Sessions</button>
+                    <button class="btn btn-secondary" onclick="filterAppointments('REQUESTED')">Requested</button>
+                    <button class="btn btn-secondary" onclick="filterAppointments('CONFIRMED')">Confirmed</button>
+                    <button class="btn btn-secondary" onclick="filterAppointments('COMPLETED')">Completed</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Appt ID</th>
+                                <th>Student ID</th>
+                                <th>Requested Schedule</th>
+                                <th>Clinical Notes / Reason</th>
+                                <th>Lifecycle State</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointmentTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Click Refresh to load appointments...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW TAB: TALK WITH STUDENTS DIRECT CHAT & VIDEO HUB -->
+        <section id="studentChatTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">💬 Secure Student Communications & Consultation Hub</div>
+                    <button class="btn btn-primary" onclick="loadStudentContactDropdown()">🔄 Refresh Student List</button>
+                </div>
+
+                <div class="grid-2" style="grid-template-columns: 300px 1fr; gap: 20px;">
+                    <div>
+                        <label>Select Student Patient:</label>
+                        <select id="counselorChatStudentSelect" onchange="loadCounselorStudentChatHistory()" style="margin-bottom: 16px;">
+                            <option value="">-- Choose Student --</option>
+                        </select>
+
+                        <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h4 style="margin-bottom: 8px; font-size: 14px;">Clinical Actions</h4>
+                            <button class="btn btn-success" style="width: 100%; margin-bottom: 8px; font-size: 12px;" onclick="startCounselorVideoCall()">📹 Launch Video Consultation</button>
+                            <button class="btn btn-secondary" style="width: 100%; font-size: 12px;" onclick="flagStudentCase()">⚠️ Flag High-Risk Case</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; height: 420px;">
+                        <div id="counselorStudentChatBox" class="chat-box" style="flex: 1;">
+                            <div class="chat-msg student" style="align-self: center; font-size: 12px;">Select a student from the dropdown to view secure messages.</div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <input type="text" id="counselorChatInput" placeholder="Type clinical message to student..." onkeypress="if(event.key==='Enter') sendCounselorMessage()">
+                            <button class="btn btn-primary" onclick="sendCounselorMessage()" style="width: 100px;">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COUNSELOR VIDEO CONSULTATION MODAL -->
+            <div id="counselorLiveVideoModal" class="card hidden" style="border: 2px solid var(--success);">
+                <div class="card-header">
+                    <h3 style="color: var(--success);">📹 Live Video Session with Student</h3>
+                    <button class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="leaveCounselorLiveCall()">End Call</button>
+                </div>
+                <div style="background: #000; width: 100%; max-width: 500px; height: 350px; margin: 0 auto; border-radius: 8px; overflow: hidden; position: relative;">
+                    <video id="counselorLiveWebcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; font-size: 12px; border-radius: 4px;">Connected to Student Telehealth Stream</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: DIAGNOSTICS -->
+        <section id="patientsTab" class="tab-view hidden">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Patient Diagnostic Lookup</div></div>
+                    <label>Enter Student ID:</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                        <input type="number" id="patientLookupId" value="1">
+                        <button class="btn btn-primary" onclick="inspectPatientRecord()" style="width: 140px;">Inspect</button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="fetchPatientMoodHistory()">Mood Trend Log</button>
+                        <button class="btn btn-secondary" onclick="fetchPatientScreenings()">PHQ-9 / GAD-7</button>
+                        <button class="btn btn-warning" onclick="fetchEmergencyContacts()">Emergency Contacts</button>
+                        <button class="btn btn-primary" onclick="fetchGratitudeEntries()">Gratitude Journal</button>
+                    </div>
+
+                    <div id="patientDiagnosticsConsole" class="terminal-box" style="margin-top: 16px; height: 280px;">
+                        Patient diagnostic history will render here...
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Interactive Diagnostic Assessor</div></div>
+                    <label>Select Questionnaire Engine:</label>
+                    <select id="diagnosticTypeSelect" style="margin-bottom: 12px;" onchange="updateAssessorForm()">
+                        <option value="PHQ-9">PHQ-9 (Depression Screening)</option>
+                        <option value="GAD-7">GAD-7 (Anxiety Screening)</option>
+                        <option value="C-SSRS">C-SSRS (Columbia Suicide Risk Rating)</option>
+                    </select>
+
+                    <div id="dynamicAssessorQuestions" style="background: rgba(0,0,0,0.03); padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border-color);">
+                        <label>Assessor Item: Over the last 2 weeks, how often have you been bothered by feeling down or hopeless?</label>
+                        <select id="qScore1">
+                            <option value="0">0 - Not at all</option>
+                            <option value="1">1 - Several days</option>
+                            <option value="2">2 - More than half the days</option>
+                            <option value="3">3 - Nearly every day</option>
+                        </select>
+                    </div>
+
+                    <label>Assessor Observations / Notes:</label>
+                    <textarea id="assessmentObservations" rows="3" placeholder="Enter clinician observations..."></textarea>
+
+                    <button class="btn btn-success" onclick="recordDiagnosticAssessment()" style="margin-top: 12px; width: 100%;">Record Assessment Score</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: SOAP & TREATMENT PLAN -->
+        <section id="notesTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">SOAP Progress Note & Treatment Planner</div></div>
+
+                <div class="grid-2" style="margin-bottom: 16px;">
+                    <div>
+                        <label>Target Student ID:</label>
+                        <input type="number" id="notesStudentId" value="1">
+                    </div>
+                    <div>
+                        <label>Diagnostic Impression (ICD-10):</label>
+                        <select id="diagnosisImpression">
+                            <option value="F41.1">F41.1 - Generalized Anxiety Disorder</option>
+                            <option value="F32.1">F32.1 - Major Depressive Disorder (Moderate)</option>
+                            <option value="Z63.0">Z63.0 - Academic Adjustment Stress</option>
+                            <option value="Z73.0">Z73.0 - Burnout State</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>SOAP Progress Note (Subjective, Objective, Assessment, Plan):</label>
+                <textarea id="soapNotesText" rows="7" placeholder="S: Patient reports reduced sleep duration...&#10;O: Affect is anxious, speech coherent...&#10;A: Moderate exam stress with sleep disruption...&#10;P: Recommending box breathing and follow-up session in 7 days..." style="margin-bottom: 16px;"></textarea>
+
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="saveClinicalNote()">Save SOAP Progress Note</button>
+                    <button class="btn btn-secondary" onclick="exportTreatmentPlan()">Export Summary</button>
+                    <button class="btn btn-warning" onclick="clearNotesForm()">Clear Form</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: CRISIS COMMAND CENTER -->
+        <section id="sosTab" class="tab-view hidden">
+            <div class="card" style="border-left: 6px solid var(--danger);">
+                <div class="card-header">
+                    <div class="card-title" style="color: var(--danger);">🚨 Campus Crisis Command Feed</div>
+                    <button class="btn btn-danger" onclick="pollSosFeed()">Poll Active Emergency Alerts</button>
+                </div>
+
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Student ID</th>
+                                <th>Trigger Mode</th>
+                                <th>Location Context</th>
+                                <th>Timestamp</th>
+                                <th>Dispatch Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sosFeedTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Click Poll to query emergency server...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="sosLogConsole" class="terminal-box" style="height: 140px;">
+                    System initialized. Standing by for incoming SOS packets...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: TELEHEALTH VIRTUAL STUDIO -->
+        <section id="telehealthTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">📹 Encrypted Tele-Consultation Studio</div></div>
+
+                <div class="grid-2">
+                    <div style="background: #0f172a; border-radius: 8px; height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+                        <div style="font-size: 52px;">🎥</div>
+                        <div style="margin-top: 12px; color: #94a3b8;">Encrypted Stream Ready</div>
+                        <button class="btn btn-success" style="margin-top: 16px;" onclick="startTeleConsultation()">Launch Virtual Room</button>
+                    </div>
+
+                    <div>
+                        <label>Virtual Session Room ID:</label>
+                        <input type="text" id="teleSessionRoom" value="ROOM-CONF-8829" readonly style="margin-bottom: 12px;">
+
+                        <label>Active Session Duration:</label>
+                        <div id="sessionTimerDisplay" style="font-size: 36px; font-weight: 800; color: var(--accent-blue); margin-bottom: 16px;">00:00:00</div>
+
+                        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                            <button class="btn btn-danger" onclick="endTeleConsultation()">End Session</button>
+                            <button class="btn btn-secondary" onclick="toggleMuteAudio()">Mute Audio</button>
+                        </div>
+
+                        <label>In-Session Quick Notes:</label>
+                        <textarea id="teleQuickNotes" rows="3" placeholder="Jot down immediate observations..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: DSM-5 / ICD-10 SEARCH ENGINE -->
+        <section id="dsmTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">📚 Clinical Reference Engine (DSM-5 & ICD-10)</div></div>
+                <label>Search Diagnostic Code or Keyword:</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <input type="text" id="dsmSearchInput" placeholder="e.g., F41.1, Depression, PTSD...">
+                    <button class="btn btn-primary" onclick="searchDsmDatabase()" style="width: 140px;">Search</button>
+                </div>
+                <div id="dsmResultsBox" class="terminal-box" style="height: 260px;">
+                    Enter search terms to query ICD-10 / DSM-5 diagnostic criteria database...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 8: AGGREGATE METRICS -->
+        <section id="analyticsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">📈 System Performance & Aggregate Metrics</div></div>
+                <div class="grid-2">
+                    <div><canvas id="screeningTrendsChart" style="max-height: 260px;"></canvas></div>
+                    <div><canvas id="sessionOutcomeChart" style="max-height: 260px;"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- PATIENT SIDE DRAWER PANEL -->
+<div id="patientSideDrawer" class="side-drawer">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+        <h3 id="drawerPatientName">Patient Drawer</h3>
+        <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closePatientDrawer()">✕ Close</button>
+    </div>
+    <div id="drawerContentBody">
+        <p>Loading patient records...</p>
+    </div>
+</div>
+
+<!-- QUICK SCHEDULE MODAL -->
+<div id="quickScheduleModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <h3>Direct Session Scheduling</h3>
+            <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closeQuickScheduleModal()">✕</button>
+        </div>
+        <label>Student ID:</label>
+        <input type="number" id="modalStudentId" value="1" style="margin-bottom: 12px;">
+        
+        <label>Appointment Schedule Time:</label>
+        <input type="datetime-local" id="modalApptTime" value="2026-08-10T11:00" style="margin-bottom: 12px;">
+        
+        <label>Session Context / Reason:</label>
+        <input type="text" id="modalApptNotes" placeholder="e.g., Follow-up anxiety screening" style="margin-bottom: 16px;">
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="submitQuickSchedule()">Schedule Appointment</button>
+    </div>
+</div>
+
+<!-- JAVASCRIPT APPLICATION ENGINE -->
+<script>
+    const BASE_URL = "http://localhost:8080/api/v1";
+    let appointmentCache = [];
+    let currentFilterState = 'ALL';
+    let timerInterval = null;
+    let sessionSeconds = 0;
+    let counselorStudentPollInterval = null;
+
+    let knownSosIds = new Set();
+    let isInitialSosPoll = true;
+
+    let riskChartInst = null;
+    let volumeChartInst = null;
+    let trendsChartInst = null;
+    let outcomeChartInst = null;
+
+    // Local ICD-10 Database Mock
+    const icdDatabase = [
+        { code: "F41.1", name: "Generalized Anxiety Disorder", desc: "Excessive anxiety and worry occurring more days than not for at least 6 months." },
+        { code: "F32.1", name: "Major Depressive Disorder, Single Episode, Moderate", desc: "Depressed mood, loss of interest/pleasure, and decreased energy." },
+        { code: "F43.10", name: "Post-Traumatic Stress Disorder, Unspecified", desc: "Exposure to actual or threatened death, serious injury, or sexual violence." },
+        { code: "Z63.0", name: "Problems in Relationship with Spouse or Partner", desc: "Interpersonal conflict affecting psychological well-being." },
+        { code: "Z73.0", name: "Burnout State", desc: "State of vital exhaustion resulting from chronic workplace/academic stress." }
+    ];
+
+    window.onload = () => {
+        startClock();
+        initCharts();
+        loadAppointments();
+        startSosMonitoring();
+        loadStudentContactDropdown();
+        startCounselorStudentChatPolling();
+    };
+
+    function startClock() {
+        setInterval(() => {
+            document.getElementById('systemClock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('mindspace_counselor_theme', isDark ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('mindspace_counselor_theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    });
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.remove('hidden');
+        if (btn) btn.classList.add('active');
+
+        if (tabId === 'analyticsTab') renderAggregateCharts();
+        if (tabId === 'studentChatTab') loadStudentContactDropdown();
+    }
+
+    function switchCounselorContext() {
+        loadAppointments();
+    }
+
+    function initCharts() {
+        const ctxRisk = document.getElementById('riskProfileChart').getContext('2d');
+        riskChartInst = new Chart(ctxRisk, {
+            type: 'doughnut',
+            data: {
+                labels: ['Stable / Low', 'Mild Stress', 'Moderate Risk', 'Severe Crisis'],
+                datasets: [{
+                    data: [65, 20, 10, 5],
+                    backgroundColor: ['#16a34a', '#2563eb', '#d97706', '#dc2626']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxVol = document.getElementById('consultationVolumeChart').getContext('2d');
+        volumeChartInst = new Chart(ctxVol, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Completed Consultations',
+                    data: [28, 34, 45, 38, 52, 42],
+                    backgroundColor: '#0f172a'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function renderAggregateCharts() {
+        if (trendsChartInst) trendsChartInst.destroy();
+        if (outcomeChartInst) outcomeChartInst.destroy();
+
+        const ctxTrends = document.getElementById('screeningTrendsChart').getContext('2d');
+        trendsChartInst = new Chart(ctxTrends, {
+            type: 'line',
+            data: {
+                labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+                datasets: [{
+                    label: 'PHQ-9 High Risk Captures',
+                    data: [2, 5, 3, 8],
+                    borderColor: '#dc2626',
+                    fill: false
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxOutcome = document.getElementById('sessionOutcomeChart').getContext('2d');
+        outcomeChartInst = new Chart(ctxOutcome, {
+            type: 'pie',
+            data: {
+                labels: ['Resolved', 'Ongoing Support', 'Referred External'],
+                datasets: [{
+                    data: [50, 40, 10],
+                    backgroundColor: ['#16a34a', '#2563eb', '#4f46e5']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function formatMapsUrl(rawLocation) {
+        if (!rawLocation) return null;
+        const coordsMatch = rawLocation.match(/[-+]?\d*\.\d+|[-+]?\d+/g);
+        if (coordsMatch && coordsMatch.length >= 2) {
+            return `https://www.google.com/maps/search/?api=1&query=${coordsMatch[0]},${coordsMatch[1]}`;
+        }
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawLocation)}`;
+    }
+
+    /* ============================================================
+     * REAL-TIME SOS ALERT MONITOR & FLOATING TOAST ENGINE
+     * ============================================================ */
+    function startSosMonitoring() {
+        pollSosFeed();
+        setInterval(pollSosFeed, 3000);
+    }
+
+    async function pollSosFeed() {
+        const tbody = document.getElementById('sosFeedTableBody');
+        const consoleEl = document.getElementById('sosLogConsole');
+
+        try {
+            const res = await fetch(`${BASE_URL}/sos/all`);
+            if (!res.ok) return;
+
+            const alerts = await res.json();
+            document.getElementById('sidebarSosCount').innerText = alerts.length;
+
+            alerts.forEach(alert => {
+                if (!knownSosIds.has(alert.id)) {
+                    knownSosIds.add(alert.id);
+                    if (!isInitialSosPoll) {
+                        triggerSosToast(alert);
+                    }
+                }
+            });
+
+            if (isInitialSosPoll) {
+                isInitialSosPoll = false;
+            }
+
+            if (!alerts || alerts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No emergency alerts recorded.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = alerts.map(a => {
+                const mapsUrl = formatMapsUrl(a.locationData);
+                const locationCell = mapsUrl 
+                    ? `<a href="${mapsUrl}" target="_blank" style="color: var(--accent-blue); font-weight: bold; text-decoration: underline;">📍 ${a.locationData}</a>`
+                    : (a.locationData || 'GPS Unavailable');
+
+                return `
+                    <tr>
+                        <td>#${a.id}</td>
+                        <td><strong>Student #${a.studentId}</strong></td>
+                        <td><span class="badge badge-critical">${a.triggerType || 'CRITICAL'}</span></td>
+                        <td>${locationCell}</td>
+                        <td>${new Date(a.timestamp).toLocaleString()}</td>
+                        <td><span class="badge badge-confirmed">${a.status || 'DISPATCHED'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            consoleEl.innerText = `[SOS Command Stream]\n` + JSON.stringify(alerts, null, 2);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">[Error]: ${err.message}</td></tr>`;
+        }
+    }
+
+    function triggerSosToast(alertData) {
+        const container = document.getElementById('sosToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'sos-toast';
+        toast.id = `toast-sos-${alertData.id}`;
+
+        const timestampStr = alertData.timestamp ? new Date(alertData.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        const mapsUrl = formatMapsUrl(alertData.locationData);
+        const locationDisplay = mapsUrl 
+            ? `<a href="${mapsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">📍 ${alertData.locationData}</a>`
+            : (alertData.locationData || 'GPS Coordinates Pending');
+
+        toast.innerHTML = `
+            <div class="sos-toast-header">
+                <span>🚨 EMERGENCY SOS ALERT #${alertData.id}</span>
+                <small style="color:#ffffffaa; font-weight: normal;">${timestampStr}</small>
+            </div>
+            <div class="sos-toast-body">
+                <strong>Student ID:</strong> #${alertData.studentId}<br>
+                <strong>Trigger Mode:</strong> ${alertData.triggerType || 'CRITICAL RISK DETECTED'}<br>
+                <strong>Location:</strong> ${locationDisplay}
+            </div>
+            <div class="sos-toast-actions">
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background: rgba(255,255,255,0.2); color: white;" 
+                        onclick="dismissToast('toast-sos-${alertData.id}')">
+                    Dismiss
+                </button>
+                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" 
+                        onclick="viewSosDetails(${alertData.id})">
+                    View Incident
+                </button>
+            </div>
+        `;
+
+        container.appendChild(toast);
+        playAlertSound();
+    }
+
+    function dismissToast(toastId) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.style.animation = 'fadeOutToast 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
+    function viewSosDetails(alertId) {
+        dismissToast(`toast-sos-${alertId}`);
+        const sosNavBtn = document.querySelector("button[onclick*='sosTab']");
+        switchTab('sosTab', sosNavBtn);
+        pollSosFeed();
+    }
+
+    function playAlertSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) {}
+    }
+
+    /* ============================================================
+     * APPOINTMENTS MANAGEMENT
+     * ============================================================ */
+    async function loadAppointments() {
+        const counselorId = document.getElementById('activeCounselorId').value;
+        const tbody = document.getElementById('appointmentTableBody');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Loading appointments...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/appointments/counselor/${counselorId}`);
+            if (!res.ok) throw new Error("Failed to load appointments");
+            
+            appointmentCache = await res.json();
+            document.getElementById('sidebarPendingCount').innerText = appointmentCache.filter(a => a.status === 'REQUESTED').length;
+            renderAppointmentTable();
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">[Error]: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderAppointmentTable() {
+        const tbody = document.getElementById('appointmentTableBody');
+        const list = currentFilterState === 'ALL' ? appointmentCache : appointmentCache.filter(a => (a.status || '').toUpperCase() === currentFilterState);
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = list.map(a => `
+            <tr>
+                <td>#${a.id}</td>
+                <td>
+                    <strong>Student #${a.studentId}</strong>
+                    <br><small><a href="#" onclick="openPatientDrawer(${a.studentId}, 'Student #${a.studentId}')">Open File</a></small>
+                </td>
+                <td>${new Date(a.appointmentTime).toLocaleString()}</td>
+                <td>${a.notes || 'N/A'}</td>
+                <td><span class="badge badge-${(a.status || 'requested').toLowerCase()}">${a.status}</span></td>
+                <td>
+                    <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="updateAppointmentStatus(${a.id}, 'CONFIRMED')">Confirm</button>
+                    <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="updateAppointmentStatus(${a.id}, 'COMPLETED')">Complete</button>
+                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="updateAppointmentStatus(${a.id}, 'CANCELLED')">Cancel</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterAppointments(status) {
+        currentFilterState = status;
+        renderAppointmentTable();
+    }
+
+    async function updateAppointmentStatus(id, status) {
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/appointments/${id}/status?status=${status}`, { method: 'PUT' });
+            if (res.ok) loadAppointments();
+        } catch (err) { alert("Failed to update status"); }
+    }
+
+    /* ============================================================
+     * TALK WITH STUDENTS CHAT & VIDEO HUB (CORRECTED SENDER LABELS)
+     * ============================================================ */
+    async function loadStudentContactDropdown() {
+        const select = document.getElementById('counselorChatStudentSelect');
+        try {
+            const res = await fetch(`${BASE_URL}/admin/students/comprehensive`);
+            if (!res.ok) {
+                const fallbackRes = await fetch(`${BASE_URL}/students/full-profiles`);
+                const students = await fallbackRes.json();
+                populateCounselorChatDropdown(students);
+                return;
+            }
+            const students = await res.json();
+            populateCounselorChatDropdown(students);
+        } catch (err) {
+            console.error("Failed to load students for counselor chat:", err);
+        }
+    }
+
+    function populateCounselorChatDropdown(students) {
+        const select = document.getElementById('counselorChatStudentSelect');
+        const currentVal = select.value;
+        select.innerHTML = `<option value="">-- Choose Student --</option>` + students.map(s => {
+            const id = s.studentId || s.id;
+            const name = s.studentName || s.name;
+            return `<option value="${id}">#${id} - ${name}</option>`;
+        }).join('');
+        if (currentVal) select.value = currentVal;
+    }
+
+    async function loadCounselorStudentChatHistory() {
+        const studentId = document.getElementById('counselorChatStudentSelect').value;
+        const chatBox = document.getElementById('counselorStudentChatBox');
+        if (!studentId) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            if (res.ok) {
+                const messages = await res.json();
+                if (!messages || messages.length === 0) {
+                    chatBox.innerHTML = `<div class="chat-msg student" style="align-self: center;">No chat messages recorded yet with this student.</div>`;
+                    return;
+                }
+                const newHtml = messages.map(m => {
+                    // Correctly distinguish sender: if sender is COUNSELOR/DOCTOR, show 'You (Counselor)', otherwise show 'Student'
+                    const isPractitioner = m.sender === 'COUNSELOR' || m.sender === 'DOCTOR' || m.sender === 'PRACTITIONER';
+                    const msgClass = isPractitioner ? 'user' : 'student';
+                    const senderLabel = isPractitioner ? 'You (Counselor): ' : 'Student: ';
+                    return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
+                }).join('');
+
+                if (chatBox.innerHTML !== newHtml) {
+                    chatBox.innerHTML = newHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load student chat history:", e);
+        }
+    }
+
+    function startCounselorStudentChatPolling() {
+        if (counselorStudentPollInterval) clearInterval(counselorStudentPollInterval);
+        counselorStudentPollInterval = setInterval(() => {
+            const activeSec = document.getElementById('studentChatTab');
+            if (activeSec && !activeSec.classList.contains('hidden')) {
+                const studentId = document.getElementById('counselorChatStudentSelect').value;
+                if (studentId) loadCounselorStudentChatHistory();
+            }
+        }, 3000);
+    }
+
+    async function sendCounselorMessage() {
+        const studentId = document.getElementById('counselorChatStudentSelect').value;
+        const input = document.getElementById('counselorChatInput');
+        const text = input.value.trim();
+        const chatBox = document.getElementById('counselorStudentChatBox');
+
+        if (!studentId) { alert("Please select a student first."); return; }
+        if (!text) return;
+
+        chatBox.innerHTML += `<div class="chat-msg user"><strong>You (Counselor): </strong>${text}</div>`;
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            await fetch(`${BASE_URL}/chat/doctor-send?studentId=${studentId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: text
+            });
+            loadCounselorStudentChatHistory();
+        } catch (err) {
+            console.error("Failed to transmit counselor message:", err);
+        }
+    }
+
+    async function startCounselorVideoCall() {
+        const studentId = document.getElementById('counselorChatStudentSelect').value;
+        if (!studentId) { alert("Please select a student to call."); return; }
+        
+        const videoModal = document.getElementById('counselorLiveVideoModal');
+        const videoElement = document.getElementById('counselorLiveWebcam');
+        videoModal.classList.remove('hidden');
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoElement.srcObject = stream;
+        } catch (err) {
+            alert("Camera access denied or unavailable.");
+        }
+    }
+
+    function leaveCounselorLiveCall() {
+        const videoElement = document.getElementById('counselorLiveWebcam');
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(t => t.stop());
+            videoElement.srcObject = null;
+        }
+        document.getElementById('counselorLiveVideoModal').classList.add('hidden');
+    }
+
+    function flagStudentCase() {
+        const studentId = document.getElementById('counselorChatStudentSelect').value;
+        if (!studentId) { alert("Please select a student first."); return; }
+        alert(`⚠️ Student #${studentId} case has been flagged and escalated for psychiatric review.`);
+    }
+
+    async function openPatientDrawer(studentId, name) {
+        document.getElementById('drawerPatientName').innerText = name;
+        const drawer = document.getElementById('patientSideDrawer');
+        const body = document.getElementById('drawerContentBody');
+        drawer.classList.add('open');
+        body.innerHTML = `<p>Querying patient database records...</p>`;
+
+        try {
+            const resMood = await fetch(`${BASE_URL}/moods/student/${studentId}`);
+            const moods = await resMood.json();
+
+            body.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <strong>Student ID:</strong> #${studentId}
+                </div>
+                <h4>Recent Mood Logs</h4>
+                <pre style="background:rgba(0,0,0,0.04); padding:8px; border-radius:4px; font-size:11px; max-height:200px; overflow-y:auto;">${JSON.stringify(moods, null, 2)}</pre>
+            `;
+        } catch (e) {
+            body.innerHTML = `<p style="color:var(--danger)">Failed to fetch patient records.</p>`;
+        }
+    }
+
+    function closePatientDrawer() {
+        document.getElementById('patientSideDrawer').classList.remove('open');
+    }
+
+    function inspectPatientRecord() {
+        const id = document.getElementById('patientLookupId').value;
+        document.getElementById('patientDiagnosticsConsole').innerText = `[Inspecting Patient #${id}]\nQuerying records...`;
+        fetchPatientMoodHistory();
+    }
+
+    async function fetchPatientMoodHistory() {
+        const id = document.getElementById('patientLookupId').value;
+        const consoleEl = document.getElementById('patientDiagnosticsConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/moods/student/${id}`);
+            const logs = await res.json();
+            consoleEl.innerText = `[Mood History - Student #${id}]\n` + JSON.stringify(logs, null, 2);
+        } catch (err) { consoleEl.innerText = `[Error]: ${err.message}`; }
+    }
+
+    async function fetchPatientScreenings() {
+        const id = document.getElementById('patientLookupId').value;
+        const consoleEl = document.getElementById('patientDiagnosticsConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/screening/student/${id}`);
+            const data = await res.json();
+            consoleEl.innerText = `[Clinical Screenings - Student #${id}]\n` + JSON.stringify(data, null, 2);
+        } catch (err) { consoleEl.innerText = `[Error]: ${err.message}`; }
+    }
+
+    async function fetchEmergencyContacts() {
+        const id = document.getElementById('patientLookupId').value;
+        const consoleEl = document.getElementById('patientDiagnosticsConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/contacts/student/${id}`);
+            const contacts = await res.json();
+            consoleEl.innerText = `[Emergency Contacts - Student #${id}]\n` + JSON.stringify(contacts, null, 2);
+        } catch (err) { consoleEl.innerText = `[Error]: ${err.message}`; }
+    }
+
+    async function fetchGratitudeEntries() {
+        const id = document.getElementById('patientLookupId').value;
+        const consoleEl = document.getElementById('patientDiagnosticsConsole');
+        try {
+            const res = await fetch(`${BASE_URL}/gratitude/student/${id}`);
+            const entries = await res.json();
+            consoleEl.innerText = `[Gratitude Journal - Student #${id}]\n` + JSON.stringify(entries, null, 2);
+        } catch (err) { consoleEl.innerText = `[Error]: ${err.message}`; }
+    }
+
+    function updateAssessorForm() {
+        const type = document.getElementById('diagnosticTypeSelect').value;
+        const box = document.getElementById('dynamicAssessorQuestions');
+        if (type === 'PHQ-9') {
+            box.innerHTML = `<label>PHQ-9: Feeling down, depressed, or hopeless?</label><select id="qScore1"><option value="0">0 - Not at all</option><option value="3">3 - Nearly every day</option></select>`;
+        } else if (type === 'GAD-7') {
+            box.innerHTML = `<label>GAD-7: Feeling nervous, anxious, or on edge?</label><select id="qScore1"><option value="0">0 - Not at all</option><option value="3">3 - Nearly every day</option></select>`;
+        } else {
+            box.innerHTML = `<label>C-SSRS: Active suicidal ideation with specific plan?</label><select id="qScore1"><option value="0">No</option><option value="5">Yes (Severe Risk)</option></select>`;
+        }
+    }
+
+    function recordDiagnosticAssessment() {
+        const type = document.getElementById('diagnosticTypeSelect').value;
+        const obs = document.getElementById('assessmentObservations').value;
+        if (!obs) { alert("Please input observations."); return; }
+        alert(`Assessment ${type} saved to clinical record.`);
+        document.getElementById('assessmentObservations').value = '';
+    }
+
+    function saveClinicalNote() {
+        const studentId = document.getElementById('notesStudentId').value;
+        const notes = document.getElementById('soapNotesText').value;
+        if (!notes) { alert("SOAP notes cannot be empty."); return; }
+        alert(`SOAP Note saved for Student #${studentId}.`);
+        document.getElementById('soapNotesText').value = '';
+    }
+
+    function exportTreatmentPlan() { alert("Exporting Summary Report..."); }
+    function clearNotesForm() { document.getElementById('soapNotesText').value = ''; }
+
+    function searchDsmDatabase() {
+        const query = document.getElementById('dsmSearchInput').value.toLowerCase();
+        const box = document.getElementById('dsmResultsBox');
+        if (!query) { box.innerText = "Please enter a search query."; return; }
+
+        const results = icdDatabase.filter(item => item.code.toLowerCase().includes(query) || item.name.toLowerCase().includes(query));
+        if (results.length === 0) {
+            box.innerText = `No ICD-10 diagnostic entries found matching query: "${query}"`;
+        } else {
+            box.innerText = `[ICD-10 / DSM-5 Query Results]\n` + JSON.stringify(results, null, 2);
+        }
+    }
+
+    function openQuickScheduleModal() { document.getElementById('quickScheduleModal').style.display = 'flex'; }
+    function closeQuickScheduleModal() { document.getElementById('quickScheduleModal').style.display = 'none'; }
+
+    async function submitQuickSchedule() {
+        const studentId = document.getElementById('modalStudentId').value;
+        const counselorId = document.getElementById('activeCounselorId').value;
+        const payload = {
+            appointmentTime: document.getElementById('modalApptTime').value,
+            notes: document.getElementById('modalApptNotes').value
+        };
+
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/book?studentId=${studentId}&counselorId=${counselorId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert("Appointment scheduled!");
+                closeQuickScheduleModal();
+                loadAppointments();
+            }
+        } catch (e) { alert("Failed to schedule."); }
+    }
+
+    function startTeleConsultation() {
+        sessionSeconds = 0;
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            sessionSeconds++;
+            const hrs = String(Math.floor(sessionSeconds / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((sessionSeconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(sessionSeconds % 60).padStart(2, '0');
+            document.getElementById('sessionTimerDisplay').innerText = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+
+        alert("Encrypted tele-consultation stream live.");
+    }
+
+    function endTeleConsultation() {
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('sessionTimerDisplay').innerText = "00:00:00";
+        alert("Session terminated.");
+    }
+
+    function toggleMuteAudio() { alert("Audio toggle triggered."); }
+</script>
+
+</body>
+</html>

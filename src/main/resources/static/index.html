@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace Enterprise — Universal Mental Health & Emergency Care Gateway</title>
+
+    <!-- Font Awesome 6 Pro / Free CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Poppins & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS VARIABLE ARCHITECTURE */
+        :root {
+            --primary-dark: #0f172a;
+            --primary-brand: #1e293b;
+            --accent-teal: #4fa8a0;
+            --accent-teal-dark: #1f3a3d;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-coral: #e85d5d;
+            --accent-amber: #e8a33d;
+            --success: #7fb77e;
+            --bg-main: #faf9f6;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #1f3a3d;
+            --text-muted: #4b5563;
+            --glow-teal: rgba(79, 168, 160, 0.4);
+            --glow-blue: rgba(37, 99, 235, 0.3);
+        }
+
+        body.dark-mode {
+            --bg-main: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary-brand: #0f172a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; }
+
+        /* KEYFRAME ANIMATIONS ENGINE */
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 var(--glow-teal); }
+            70% { box-shadow: 0 0 0 15px rgba(79, 168, 160, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 168, 160, 0); }
+        }
+
+        @keyframes pulseSos {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 93, 93, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 18px rgba(232, 93, 93, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 93, 93, 0); }
+        }
+
+        @keyframes marqueeScroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @keyframes floatAnimation {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes rotateGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ANNOUNCEMENT MARQUEE ADVERTISEMENT BAR */
+        .marquee-container {
+            background: linear-gradient(90deg, #1e1b4b, #312e81, #0f172a);
+            color: #a5b4fc;
+            padding: 8px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .marquee-content {
+            display: inline-block;
+            animation: marqueeScroll 28s linear infinite;
+        }
+        .marquee-content span { margin-right: 40px; display: inline-flex; align-items: center; gap: 8px; }
+        .marquee-content i { color: #f59e0b; }
+
+        /* NAVIGATION HEADER */
+        .navbar {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 16px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+        }
+        .navbar-brand i {
+            color: var(--accent-teal);
+            font-size: 28px;
+            filter: drop-shadow(0 0 8px var(--accent-teal));
+        }
+        .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s, transform 0.2s;
+            display: inline-block;
+        }
+        .nav-links a:hover { color: var(--accent-teal); transform: translateY(-1px); }
+        .nav-actions { display: flex; align-items: center; gap: 14px; }
+
+        .btn-nav-outline {
+            background: transparent;
+            border: 2px solid var(--accent-teal);
+            color: var(--accent-teal);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-nav-outline:hover {
+            background: var(--accent-teal);
+            color: white;
+            box-shadow: 0 0 15px var(--glow-teal);
+        }
+
+        .btn-nav-primary {
+            background: linear-gradient(135deg, var(--accent-teal), #0d9488);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--glow-teal);
+        }
+        .btn-nav-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--glow-teal);
+        }
+
+        /* HERO SLIDER CAROUSEL SECTION */
+        .hero-wrapper {
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #0f272a, #1e293b);
+            background-size: 400% 400%;
+            animation: rotateGradient 15s ease infinite;
+            color: white;
+            padding: 90px 48px 120px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-bg-grid {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+        }
+        .hero-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(79, 168, 160, 0.15);
+            border: 1px solid rgba(79, 168, 160, 0.4);
+            color: #5eead4;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            backdrop-filter: blur(4px);
+        }
+        .hero-title {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 1.12;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            margin-bottom: 36px;
+            max-width: 620px;
+            line-height: 1.7;
+        }
+        .hero-cta-group { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+
+        .floating-hero-card {
+            animation: floatAnimation 4s ease-in-out infinite;
+            text-align: center;
+            position: relative;
+        }
+        .floating-hero-card img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 25px 35px rgba(0,0,0,0.5));
+        }
+
+        /* VOICE JARVIS WIDGET OVERLAY */
+        .jarvis-voice-box {
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid var(--accent-teal);
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-top: 20px;
+            max-width: 480px;
+        }
+        .voice-btn-mic {
+            background: linear-gradient(135deg, #0d9488, var(--accent-teal));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .voice-btn-mic.listening {
+            background: var(--accent-coral);
+            animation: pulseSos 1.5s infinite;
+        }
+
+        /* DYNAMIC FLOATING ADVERTISEMENT BANNER */
+        .ad-banner-floating {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--accent-teal);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            max-width: 380px;
+            animation: floatAnimation 5s ease-in-out infinite;
+        }
+        .ad-icon-badge {
+            width: 44px; height: 44px;
+            background: rgba(79, 168, 160, 0.2);
+            color: var(--accent-teal);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .ad-close-btn {
+            position: absolute; top: -8px; right: -8px;
+            background: var(--accent-coral); color: white;
+            border: none; border-radius: 50%;
+            width: 22px; height: 22px; font-size: 11px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ANIMATED PLATFORM STATISTICS COUNTER */
+        .metrics-bar {
+            max-width: 1350px;
+            margin: -50px auto 80px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 36px 48px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            box-shadow: 0 20px 45px -15px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+        }
+        .metric-item { text-align: center; border-right: 1px solid var(--border-color); }
+        .metric-item:last-child { border-right: none; }
+        .metric-num { font-size: 40px; font-weight: 900; color: var(--accent-teal-dark); margin-bottom: 4px; font-family: 'Poppins', sans-serif; }
+        .metric-title { font-size: 13px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* FEATURES 3D GRID */
+        .section-container { max-width: 1400px; margin: 0 auto 100px; padding: 0 48px; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-tag { color: var(--accent-teal); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; }
+        .section-title { font-size: 38px; font-weight: 800; color: var(--text-main); margin-top: 8px; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 36px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            top: 0;
+        }
+        .feature-card:hover {
+            top: -10px;
+            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.12);
+            border-color: var(--accent-teal);
+        }
+        .feature-icon {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, rgba(79, 168, 160, 0.15), rgba(37, 99, 235, 0.1));
+            color: var(--accent-teal);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; margin-bottom: 24px;
+        }
+        .feature-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+        .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+        /* INTERACTIVE CARE MATRIX TABS */
+        .tabs-wrapper { display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; }
+        .tab-trigger {
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-trigger.active {
+            background: var(--accent-teal);
+            color: white;
+            border-color: var(--accent-teal);
+            box-shadow: 0 4px 15px var(--glow-teal);
+        }
+
+        .tab-panel-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+
+        /* TESTIMONIALS CAROUSEL */
+        .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .testimonial-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            font-size: 14px;
+            position: relative;
+        }
+        .quote-icon { font-size: 24px; color: var(--accent-teal); margin-bottom: 12px; }
+        .author-box { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+        .author-avatar { width: 42px; height: 42px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+        /* PERSISTENT SOS FLOATING ACTION BUTTON (FAB) */
+        .sos-floating-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: var(--accent-coral);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            z-index: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(232, 93, 93, 0.5);
+            animation: pulseSos 2s infinite;
+        }
+
+        /* AUTH MODAL DIALOG ENGINE */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .close-modal-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: transparent; border: none; font-size: 22px;
+            color: var(--text-muted); cursor: pointer;
+        }
+
+        .auth-toggle-header {
+            display: flex; background: rgba(0,0,0,0.04);
+            border-radius: 12px; padding: 4px; margin-bottom: 24px;
+        }
+        .auth-toggle-tab {
+            flex: 1; text-align: center; padding: 12px;
+            font-size: 14px; font-weight: 700; border-radius: 10px;
+            cursor: pointer; color: var(--text-muted); transition: all 0.2s;
+        }
+        .auth-toggle-tab.active { background: var(--card-bg); color: var(--accent-teal); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+        .role-selector-pills { display: flex; gap: 8px; margin-bottom: 24px; }
+        .role-pill {
+            flex: 1; text-align: center; padding: 8px; font-size: 12px;
+            font-weight: 700; border-radius: 8px; border: 1px solid var(--border-color);
+            cursor: pointer; color: var(--text-muted);
+        }
+        .role-pill.active { background: var(--accent-teal); color: white; border-color: var(--accent-teal); }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; }
+        input, select {
+            width: 100%; padding: 12px 16px; border-radius: 10px;
+            border: 1px solid var(--border-color); font-size: 14px;
+            background: var(--card-bg); color: var(--text-main);
+        }
+        input:focus { outline: none; border-color: var(--accent-teal); box-shadow: 0 0 0 3px var(--glow-teal); }
+
+        .guardian-header-tag {
+            border-top: 1px dashed var(--border-color);
+            margin: 20px 0 14px;
+            padding-top: 14px;
+            font-weight: 800;
+            color: var(--accent-teal);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-submit-auth {
+            width: 100%; padding: 14px; border-radius: 10px; border: none;
+            background: var(--accent-teal); color: white; font-weight: 800;
+            font-size: 15px; cursor: pointer; margin-top: 10px;
+        }
+
+        /* FOOTER */
+        footer {
+            background: var(--primary-dark); color: #94a3b8;
+            padding: 80px 48px 30px; border-top: 1px solid var(--border-color);
+        }
+        .footer-grid { max-width: 1400px; margin: 0 auto 40px; display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 48px; }
+        .footer-brand { color: white; font-size: 22px; font-weight: 800; margin-bottom: 16px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- DYNAMIC ANNOUNCEMENT MARQUEE ADVERTISING BAR -->
+<div class="marquee-container">
+    <div class="marquee-content">
+        <span><i class="fa-solid fa-bullhorn"></i> Campus Tele-MANAS Hotline Integrated: Dial 14416 (Toll-Free 24/7)</span>
+        <span><i class="fa-solid fa-microchip"></i> JARVIS 24/7 Voice & AI Assistant Online</span>
+        <span><i class="fa-solid fa-shield-virus"></i> Confidential Anxiety & PHQ-9 Depression Assessments Live</span>
+        <span><i class="fa-solid fa-user-doctor"></i> Dedicated Psychiatric Tele-Consultations Available</span>
+        <span><i class="fa-solid fa-bolt"></i> Async Emergency SOS Alerts Active Campus-Wide</span>
+    </div>
+</div>
+
+<!-- NAVIGATION HEADER -->
+<nav class="navbar">
+    <a href="#" class="navbar-brand">
+        <i class="fa-solid fa-brain"></i> AI Powered MHSS
+    </a>
+    <ul class="nav-links">
+        <li><a href="#features">Platform Features</a></li>
+        <li><a href="#matrix">Care Matrix</a></li>
+        <li><a href="#testimonials">Impact</a></li>
+        <li><a href="#helplines">Emergency Helplines</a></li>
+    </ul>
+    <div class="nav-actions">
+        <button class="btn-nav-outline" onclick="openAuthModal('LOGIN')">Sign In</button>
+        <button class="btn-nav-primary" onclick="openAuthModal('REGISTER')">Get Started</button>
+    </div>
+</nav>
+
+<!-- HERO SLIDER SECTION -->
+<section class="hero-wrapper">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-container">
+        <div>
+            <div class="hero-badge"><i class="fa-solid fa-shield-halved"></i> Enterprise Campus Mental Health System</div>
+            <h1 class="hero-title">Empowering Student Mental Health with Proactive Care.</h1>
+            <p class="hero-subtitle">A unified, privacy-first digital mental health platform connecting students, campus counselors, psychiatric doctors, and administrators with JARVIS AI voice support.</p>
+            <div class="hero-cta-group">
+                <button class="btn-nav-primary" style="padding: 16px 36px; font-size: 16px;" onclick="openAuthModal('REGISTER')">Begin Wellness Check-in</button>
+                <button class="btn-nav-outline" style="padding: 16px 32px; font-size: 16px; color: white; border-color: rgba(255,255,255,0.4);" onclick="openAuthModal('LOGIN')">Access Care Portal</button>
+            </div>
+
+            <!-- JARVIS VOICE INTERACTION WIDGET -->
+            <div class="jarvis-voice-box">
+                <div style="font-weight: 800; font-size: 15px; margin-bottom: 8px; color: var(--accent-teal);">
+                    <i class="fa-solid fa-robot"></i> Speak with JARVIS AI Voice Assistant
+                </div>
+                <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 14px;" id="jarvisStatusText">
+                    "Hello! I am here to listen and support you unconditionally. How are you feeling today?"
+                </div>
+                <button id="startVoiceBtn" class="voice-btn-mic" onclick="toggleJarvisVoice()">
+                    <i class="fa-solid fa-microphone" id="micIcon"></i>
+                    <span id="voiceBtnText">Talk with JARVIS</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="floating-hero-card">
+            <img src="https://cdni.iconscout.com/illustration/premium/thumb/mental-health-care-4315201-3590858.png" alt="MindSpace Mental Health Care">
+        </div>
+    </div>
+</section>
+
+<!-- ANIMATED PLATFORM STATISTICS BAR -->
+<div class="metrics-bar">
+    <div class="metric-item">
+        <div class="metric-num" id="counter1">24/7</div>
+        <div class="metric-title">JARVIS AI Voice Assistant</div>
+    </div>
+    <div class="metric-item">
+        <div class="metric-num" id="counter2">&lt; 5s</div>
+        <div class="metric-title">SOS Emergency Dispatch</div>
+    </div>
+    <div class="metric-item">
+        <div class="metric-num" id="counter3">100%</div>
+        <div class="metric-title">Consent-Gated Privacy</div>
+    </div>
+    <div class="metric-item">
+        <div class="metric-num" id="counter4">PHQ-9</div>
+        <div class="metric-title">Clinical Screening Engine</div>
+    </div>
+</div>
+
+<!-- 3D FEATURES GRID -->
+<section class="section-container" id="features">
+    <div class="section-header">
+        <div class="section-tag">Comprehensive Care Suite</div>
+        <h2 class="section-title">Designed for Proactive Support & Rapid Crisis Escalation</h2>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+            <h3>Daily Mood Tracking</h3>
+            <p>Low-friction check-ins allow students to log mood scores in under 10 seconds, visualizing emotional wellness trends over time.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-robot"></i></div>
+            <h3>JARVIS Voice AI</h3>
+            <p>Voice-enabled, polite, articulate AI conversational support with automatic offline self-care fallbacks and real-time risk keyword detection.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+            <h3>Clinical Assessments</h3>
+            <p>Standardized PHQ-9 and GAD-7 assessment engines providing immediate severity scoring and clinical follow-up prompts.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-triangle-exclamation" style="color: var(--accent-coral);"></i></div>
+            <h3>Persistent SOS Emergency</h3>
+            <p>One-tap crisis dispatch that asynchronously routes SMS alerts to linked parents, security teams, and campus counselors.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-user-doctor"></i></div>
+            <h3>Counselor & Doctor Portals</h3>
+            <p>Consent-gated student files, SOAP note editors, psychotropic pharmacopeia search, and PDF prescription generation.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-chart-pie"></i></div>
+            <h3>Campus Operations Suite</h3>
+            <p>System-wide aggregate risk profiling, user account verification queues, and live emergency monitoring for administrators.</p>
+        </div>
+    </div>
+</section>
+
+<!-- INTERACTIVE CARE MATRIX TABS -->
+<section class="section-container" id="matrix">
+    <div class="section-header">
+        <div class="section-tag">Role-Based Workflows</div>
+        <h2 class="section-title">Four Experiences, One Integrated Backend</h2>
+    </div>
+
+    <div class="tabs-wrapper">
+        <button class="tab-trigger active" onclick="switchMatrixTab('studentMatrix', this)">Student App</button>
+        <button class="tab-trigger" onclick="switchMatrixTab('counselorMatrix', this)">Counselor Portal</button>
+        <button class="tab-trigger" onclick="switchMatrixTab('doctorMatrix', this)">Doctor Console</button>
+        <button class="tab-trigger" onclick="switchMatrixTab('adminMatrix', this)">Admin Suite</button>
+    </div>
+
+    <div class="tab-panel-box" id="studentMatrix">
+        <h3>Student Wellness & Check-in Experience</h3>
+        <p style="color: var(--text-muted); margin-top: 8px;">Students access daily mood check-ins, gratitude journaling, box breathing exercises, anonymous peer forums, and appointment booking—backed by persistent SOS emergency access and JARVIS AI voice chat.</p>
+    </div>
+    <div class="tab-panel-box hidden" id="counselorMatrix">
+        <h3>Campus Counselor Clinical Console</h3>
+        <p style="color: var(--text-muted); margin-top: 8px;">Counselors review assigned student profiles with consent gating, conduct tele-consultation sessions, document SOAP progress notes, and trigger psychiatric referrals.</p>
+    </div>
+    <div class="tab-panel-box hidden" id="doctorMatrix">
+        <h3>Doctor & Psychiatrist Specialist Suite</h3>
+        <p style="color: var(--text-muted); margin-top: 8px;">Psychiatrists review referred cases, search the psychotropic pharmacopeia for interactions, update long-term treatment plans, and issue digitally signed prescription PDFs.</p>
+    </div>
+    <div class="tab-panel-box hidden" id="adminMatrix">
+        <h3>System Operations & Executive Oversight</h3>
+        <p style="color: var(--text-muted); margin-top: 8px;">Administrators oversee system health, verify professional credentials, monitor crisis emergency alerts in real time, and inspect aggregate campus risk metrics.</p>
+    </div>
+</section>
+
+<!-- TESTIMONIALS SECTION -->
+<section class="section-container" id="testimonials">
+    <div class="section-header">
+        <div class="section-tag">Campus Feedback</div>
+        <h2 class="section-title">Trusted by Students & Care Professionals</h2>
+    </div>
+
+    <div class="testimonial-grid">
+        <div class="testimonial-card">
+            <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
+            <p>"Speaking directly with JARVIS via voice when I felt overwhelmed late at night helped me ground my thoughts effortlessly."</p>
+            <div class="author-box">
+                <div class="author-avatar">SI</div>
+                <div><strong>Shantanu Ingle</strong><br><small style="color:var(--text-muted)">Computer Science Student</small></div>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
+            <p>"Having consent-gated access to student PHQ-9 scores before consultation sessions makes our campus clinical triage far more effective."</p>
+            <div class="author-box">
+                <div class="author-avatar">AR</div>
+                <div><strong>Dr. Ananya Roy</strong><br><small style="color:var(--text-muted)">Lead Campus Counselor</small></div>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
+            <p>"The async SOS emergency dispatch system ensures emergency alerts reach parents and security teams within seconds."</p>
+            <div class="author-box">
+                <div class="author-avatar">SD</div>
+                <div><strong>Dr. Sameer Deshmukh</strong><br><small style="color:var(--text-muted)">M.D. Psychiatry Specialist</small></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FLOATING ADVERTISEMENT ANNOUNCEMENT BANNER -->
+<div class="ad-banner-floating" id="adBanner">
+    <button class="ad-close-btn" onclick="closeAdBanner()">✕</button>
+    <div class="ad-icon-badge"><i class="fa-solid fa-phone-volume"></i></div>
+    <div>
+        <div style="font-weight: 800; font-size: 13px;">Immediate Crisis Support</div>
+        <div style="font-size: 11px; color: #94a3b8;">Call Tele-MANAS Helpline at <strong style="color: #5eead4;">14416</strong></div>
+    </div>
+</div>
+
+<!-- PERSISTENT SOS FLOATING ACTION BUTTON (FAB) -->
+<button class="sos-floating-fab" onclick="openAuthModal('LOGIN')">
+    <i class="fa-solid fa-bell"></i> EMERGENCY SOS
+</button>
+
+<!-- AUTHENTICATION MODAL DIALOG -->
+<div id="authModalOverlay" class="modal-overlay">
+    <div class="auth-card">
+        <button class="close-modal-btn" onclick="closeAuthModal()"><i class="fa-solid fa-xmark"></i></button>
+        
+        <div class="auth-toggle-header" id="authToggleHeader">
+            <div class="auth-toggle-tab active" id="tabModeLogin" onclick="switchAuthMode('LOGIN')">Sign In</div>
+            <div class="auth-toggle-tab" id="tabModeRegister" onclick="switchAuthMode('REGISTER')">Create Account</div>
+        </div>
+
+        <div class="role-selector-pills">
+            <div class="role-pill active" id="pillStudent" onclick="selectRolePill('STUDENT', this)">Student</div>
+            <div class="role-pill" id="pillCounselor" onclick="selectRolePill('COUNSELOR', this)">Counselor</div>
+            <div class="role-pill" id="pillDoctor" onclick="selectRolePill('DOCTOR', this)">Doctor</div>
+            <div class="role-pill" id="pillAdmin" onclick="selectRolePill('ADMIN', this)">Admin</div>
+        </div>
+
+        <form id="authModalForm" onsubmit="handleAuthSubmit(event)">
+            <div id="registerFields" class="hidden">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="authName" placeholder="Shantanu Ingle">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="text" id="authPhone" placeholder="+919561453781">
+                </div>
+
+                <!-- MANDATORY GUARDIAN / EMERGENCY CONTACT DETAILS -->
+                <div class="guardian-header-tag">
+                    🚨 Mandatory Emergency Contact (Guardian)
+                </div>
+
+                <div class="form-group">
+                    <label>Guardian / Parent Full Name *</label>
+                    <input type="text" id="authGuardianName" placeholder="Guardian Name">
+                </div>
+                <div class="form-group">
+                    <label>Guardian Phone Number *</label>
+                    <input type="text" id="authGuardianPhone" placeholder="+919876543210">
+                </div>
+                <div class="form-group">
+                    <label>Guardian Email (For Emergency SOS Alerts) *</label>
+                    <input type="email" id="authGuardianEmail" placeholder="guardian@example.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="emailLabel">Student Email Address *</label>
+                <input type="email" id="authEmail" required placeholder="shantanu@example.com" value="shantanu@example.com">
+            </div>
+
+            <div class="form-group">
+                <label>Password *</label>
+                <input type="password" id="authPassword" required placeholder="••••••••" value="password123">
+            </div>
+
+            <button type="submit" class="btn-submit-auth" id="authSubmitBtn">Sign In to MindSpace</button>
+        </form>
+
+        <div id="authModalStatus" style="margin-top: 14px; text-align: center; font-size: 13px; font-weight: 700;"></div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-grid">
+        <div>
+            <div class="footer-brand"><i class="fa-solid fa-brain"></i> MindSpace</div>
+            <p style="font-size: 13px; line-height: 1.7;">Enterprise Student Mental Health System providing continuous emotional monitoring, clinical triage, and emergency dispatch workflows.</p>
+        </div>
+        <div>
+            <h4 style="color: white; margin-bottom: 16px;">Platform Portals</h4>
+            <p><a href="#" onclick="openAuthModal('LOGIN')" style="color: inherit; text-decoration: none;">Student Portal</a></p>
+            <p><a href="#" onclick="openAuthModal('LOGIN')" style="color: inherit; text-decoration: none;">Counselor Suite</a></p>
+            <p><a href="#" onclick="openAuthModal('LOGIN')" style="color: inherit; text-decoration: none;">Doctor Suite</a></p>
+        </div>
+        <div>
+            <h4 style="color: white; margin-bottom: 16px;" id="helplines">Emergency Contacts</h4>
+            <p>Tele-MANAS: 14416</p>
+            <p>KIRAN: 1800-599-0019</p>
+            <p>Vandrevala: +91 9999 666 555</p>
+        </div>
+        <div>
+            <h4 style="color: white; margin-bottom: 16px;">System Standards</h4>
+            <p>Consent-First Data Layer</p>
+            <p>Async Twilio SMS Dispatch</p>
+            <p>RBAC Security Controls</p>
+        </div>
+    </div>
+    <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; font-size: 12px;">
+        MindSpace Enterprise Mental Health System &copy; 2026 — Built for Campus Safety & Care.
+    </div>
+</footer>
+
+<!-- JAVASCRIPT APPLICATION ENGINE -->
+<script>
+    const BASE_URL = "http://localhost:8080/api/v1";
+    let currentAuthMode = 'LOGIN';
+    let currentRole = 'STUDENT';
+
+    /* ============================================================
+     * WEB SPEECH ENGINE (JARVIS VOICE RECOGNITION & SYNTHESIS)
+     * ============================================================ */
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let jarvisRecognition;
+    let isVoiceActive = false;
+
+    if (SpeechRecognition) {
+        jarvisRecognition = new SpeechRecognition();
+        jarvisRecognition.continuous = false;
+        jarvisRecognition.lang = 'en-US';
+
+        jarvisRecognition.onresult = (event) => {
+            const spokenText = event.results[0][0].transcript;
+            document.getElementById('jarvisStatusText').innerHTML = `<em>"User said: ${spokenText}"</em>`;
+            sendToJarvisBackend(spokenText);
+        };
+
+        jarvisRecognition.onend = () => {
+            stopVoiceUI();
+        };
+
+        jarvisRecognition.onerror = (err) => {
+            console.error("Speech Recognition Error:", err);
+            stopVoiceUI();
+        };
+    }
+
+    function toggleJarvisVoice() {
+        if (!jarvisRecognition) {
+            alert("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
+            return;
+        }
+
+        if (!isVoiceActive) {
+            try {
+                jarvisRecognition.start();
+                isVoiceActive = true;
+                document.getElementById('startVoiceBtn').classList.add('listening');
+                document.getElementById('micIcon').className = 'fa-solid fa-microphone-lines';
+                document.getElementById('voiceBtnText').innerText = 'Listening...';
+                document.getElementById('jarvisStatusText').innerText = "JARVIS is listening to you. Speak now...";
+            } catch(e) {
+                console.error(e);
+            }
+        } else {
+            jarvisRecognition.stop();
+            stopVoiceUI();
+        }
+    }
+
+    function stopVoiceUI() {
+        isVoiceActive = false;
+        const btn = document.getElementById('startVoiceBtn');
+        if (btn) {
+            btn.classList.remove('listening');
+            document.getElementById('micIcon').className = 'fa-solid fa-microphone';
+            document.getElementById('voiceBtnText').innerText = 'Talk with JARVIS';
+        }
+    }
+
+    function speakAsJarvis(text) {
+        if (!('speechSynthesis' in window)) return;
+
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 0.90;
+
+        const voices = window.speechSynthesis.getVoices();
+        const jarvisVoice = voices.find(v => v.name.includes("UK English Male") || v.name.includes("Natural") || v.lang === "en-GB");
+        if (jarvisVoice) {
+            utterance.voice = jarvisVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    async function sendToJarvisBackend(messageText) {
+        const statusEl = document.getElementById('jarvisStatusText');
+        statusEl.innerText = "JARVIS is thinking...";
+
+        try {
+            const response = await fetch(`${BASE_URL}/chat/send?studentId=1`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: messageText
+            });
+
+            const reply = await response.text();
+            statusEl.innerText = reply;
+            speakAsJarvis(reply);
+        } catch (error) {
+            console.error("Error communicating with JARVIS backend:", error);
+            const fallbackReply = "I am currently operating in Offline Self-Care Mode. Please reach out to campus counselors or use the emergency SOS button if you need immediate assistance.";
+            statusEl.innerText = fallbackReply;
+            speakAsJarvis(fallbackReply);
+        }
+    }
+
+    /* ============================================================
+     * MODAL & ROUTING CONTROLLERS
+     * ============================================================ */
+    function openAuthModal(mode) {
+        currentAuthMode = mode;
+        switchAuthMode(mode);
+        document.getElementById('authModalOverlay').style.display = 'flex';
+    }
+
+    function closeAuthModal() {
+        document.getElementById('authModalOverlay').style.display = 'none';
+    }
+
+    function switchAuthMode(mode) {
+        currentAuthMode = mode;
+        const isReg = mode === 'REGISTER' && currentRole === 'STUDENT';
+        
+        document.getElementById('tabModeLogin').classList.toggle('active', !isReg);
+        document.getElementById('tabModeRegister').classList.toggle('active', isReg);
+        
+        const registerFields = document.getElementById('registerFields');
+        if (registerFields) {
+            registerFields.classList.toggle('hidden', !isReg);
+        }
+        
+        document.getElementById('authSubmitBtn').innerText = isReg ? 'Create Account & Register' : `Sign In as ${currentRole.charAt(0) + currentRole.slice(1).toLowerCase()}`;
+    }
+
+    function selectRolePill(role, pillEl) {
+        currentRole = role;
+        document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
+        pillEl.classList.add('active');
+
+        const emailLabel = document.getElementById('emailLabel');
+        const authToggleHeader = document.getElementById('authToggleHeader');
+        const registerFields = document.getElementById('registerFields');
+
+        if (emailLabel) {
+            let roleTitle = role.charAt(0) + role.slice(1).toLowerCase();
+            emailLabel.innerText = `${roleTitle} Email Address *`;
+        }
+
+        // Only Students can register; staff roles (Counselor, Doctor, Admin) are restricted to Sign In only.
+        if (role !== 'STUDENT') {
+            currentAuthMode = 'LOGIN';
+            if (authToggleHeader) authToggleHeader.style.display = 'none';
+            if (registerFields) registerFields.classList.add('hidden');
+            document.getElementById('authSubmitBtn').innerText = `Sign In as ${role.charAt(0) + role.slice(1).toLowerCase()}`;
+        } else {
+            if (authToggleHeader) authToggleHeader.style.display = 'flex';
+            switchAuthMode(currentAuthMode);
+        }
+    }
+
+    function switchMatrixTab(panelId, btn) {
+        document.querySelectorAll('.tab-panel-box').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-trigger').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(panelId).classList.remove('hidden');
+        btn.classList.add('active');
+    }
+
+    function closeAdBanner() {
+        document.getElementById('adBanner').style.display = 'none';
+    }
+
+    async function handleAuthSubmit(e) {
+        e.preventDefault();
+        const statusEl = document.getElementById('authModalStatus');
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value.trim();
+
+        statusEl.style.color = "var(--accent-teal)";
+        statusEl.innerText = "Authenticating with server...";
+
+        let mappedRole = "ROLE_STUDENT";
+        if (currentRole === 'COUNSELOR') mappedRole = "ROLE_COUNSELOR";
+        if (currentRole === 'DOCTOR') mappedRole = "ROLE_DOCTOR";
+        if (currentRole === 'ADMIN') mappedRole = "ROLE_ADMIN";
+
+        if (currentAuthMode === 'REGISTER' && currentRole === 'STUDENT') {
+            const payload = {
+                name: document.getElementById('authName').value,
+                email: email,
+                phoneNumber: document.getElementById('authPhone').value,
+                password: password,
+                role: mappedRole,
+                guardianName: document.getElementById('authGuardianName').value,
+                guardianPhone: document.getElementById('authGuardianPhone').value,
+                guardianEmail: document.getElementById('authGuardianEmail').value
+            };
+
+            try {
+                const res = await fetch(`${BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    statusEl.style.color = "var(--success)";
+                    statusEl.innerText = "Account registered successfully! Please sign in...";
+                    setTimeout(() => switchAuthMode('LOGIN'), 1000);
+                } else {
+                    const errorData = await res.json().catch(() => ({}));
+                    statusEl.style.color = "var(--accent-coral)";
+                    statusEl.innerText = errorData.message || "Registration failed. Please check input fields.";
+                }
+            } catch (err) {
+                statusEl.style.color = "var(--accent-coral)";
+                statusEl.innerText = "Server connection error during registration.";
+            }
+        } else {
+            try {
+                const res = await fetch(`${BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: email, 
+                        password: password, 
+                        role: mappedRole 
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    statusEl.style.color = "var(--success)";
+                    statusEl.innerText = "Authenticated! Redirecting...";
+                    localStorage.setItem('student_user', JSON.stringify(data));
+                    setTimeout(() => routeToDashboard(data.role || mappedRole), 800);
+                } else {
+                    statusEl.style.color = "var(--accent-coral)";
+                    statusEl.innerText = data.message || "Invalid credentials or unauthorized role.";
+                }
+            } catch (err) {
+                statusEl.style.color = "var(--accent-coral)";
+                statusEl.innerText = "Server connection error during login.";
+            }
+        }
+    }
+
+    function routeToDashboard(serverRole) {
+        let effectiveRole = currentRole; 
+        
+        if (serverRole) {
+            let cleanRole = serverRole.replace("ROLE_", "").toUpperCase();
+            if (["STUDENT", "COUNSELOR", "DOCTOR", "ADMIN"].includes(cleanRole)) {
+                effectiveRole = cleanRole;
+            }
+        }
+
+        switch (effectiveRole.toUpperCase()) {
+            case 'STUDENT': 
+                window.location.href = "student-portal.html"; 
+                break;
+            case 'COUNSELOR': 
+                window.location.href = "counselor-dashboard.html"; 
+                break;
+            case 'DOCTOR': 
+                window.location.href = "doctor-dashboard.html"; 
+                break;
+            case 'ADMIN': 
+                window.location.href = "admin-dashboard.html"; 
+                break;
+            default: 
+                window.location.href = "student-portal.html";
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace Enterprise — Administrative Control Suite</title>
+    <!-- Chart.js CDN for Visual Operations Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --primary-brand: #1e293b;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-teal: #0d9488;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #16a34a;
+            --info: #0284c7;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body.dark-mode {
+            --bg-main: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary-brand: #1f2937;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); line-height: 1.5; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
+
+        /* Floating SOS Toast Container */
+        #sosToastContainer {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 420px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .sos-toast {
+            pointer-events: auto;
+            background: #7f1d1d;
+            color: #ffffff;
+            border-left: 6px solid #ef4444;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: slideInToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .sos-toast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fca5a5;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sos-toast-body {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #fef2f2;
+        }
+
+        .sos-toast-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        @keyframes slideInToast {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOutToast {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+
+        /* Top Navigation Header */
+        .app-header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .app-header .admin-badge { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; font-size: 13px; }
+
+        /* Main Container Layout */
+        .app-container { max-width: 1750px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+        /* Sidebar Controls */
+        .sidebar-panel { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .sidebar-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-btn {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; border: none; background: transparent;
+            color: var(--text-main); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-align: left; width: 100%;
+        }
+        .nav-btn:hover { background: rgba(37,99,235,0.1); color: var(--accent-blue); }
+        .nav-btn.active { background: var(--accent-blue); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+
+        /* Viewport & Cards */
+        .view-content { display: flex; flex-direction: column; gap: 24px; }
+        .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        /* Grids */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+        /* Metrics */
+        .metric-card { background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; text-align: center; }
+        .metric-value { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 4px 0; }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+        /* Controls */
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px;
+            background: var(--card-bg); color: var(--text-main); transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 6px;
+            font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-secondary { background: var(--border-color); color: var(--text-main); }
+        .btn-secondary:hover { opacity: 0.8; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+        th { background: rgba(0,0,0,0.03); padding: 12px 16px; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: rgba(0,0,0,0.02); }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-alert { background: #fee2e2; color: #991b1b; }
+
+        /* Terminal Console */
+        .terminal-box {
+            background: #0f172a; color: #38bdf8; font-family: 'Consolas', 'Courier New', monospace;
+            padding: 16px; border-radius: 8px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
+        }
+
+        /* Modals & Drawers */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); border-radius: 12px; width: 680px; max-width: 92%; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- FLOATING REAL-TIME TOAST CONTAINER -->
+<div id="sosToastContainer"></div>
+
+<!-- TOP NAVIGATION HEADER -->
+<header class="app-header">
+    <h1>🏛️ MindSpace Admin Suite</h1>
+    <div class="admin-badge">
+        <span>Role: System Administrator</span>
+        <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
+        <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
+        <button onclick="logoutAdmin()" style="background: var(--danger); border: none; color: white; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: 700;">Logout</button>
+    </div>
+</header>
+
+<!-- MAIN APP CONTAINER -->
+<div class="app-container">
+
+    <!-- SIDEBAR PANEL -->
+    <aside class="sidebar-panel">
+        <div class="sidebar-title">Admin Navigation</div>
+        <nav class="nav-menu">
+            <button class="nav-btn active" onclick="switchTab('overviewTab', this)">📊 Executive Overview</button>
+            <button class="nav-btn" onclick="switchTab('appointmentsTab', this)">📅 Counselor Appointments</button>
+            <button class="nav-btn" onclick="switchTab('studentsTab', this)">🎓 Complete Student Directory</button>
+            <button class="nav-btn" onclick="switchTab('counselorsTab', this)">👨‍⚕️ Counselor Management</button>
+            <button class="nav-btn" onclick="switchTab('sosTab', this)">🚨 Crisis & SOS Logs</button>
+            <button class="nav-btn" onclick="switchTab('systemTab', this)">⚙️ System Health & Audit</button>
+            <button class="nav-btn" onclick="switchTab('analyticsTab', this)">📈 Global Platform Metrics</button>
+            <button class="nav-btn" onclick="switchTab('logsTab', this)">📄 Real-time System Stream</button>
+        </nav>
+
+        <div class="sidebar-title" style="margin-top: 24px;">Platform Health</div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Server Status</div>
+            <div class="metric-value" style="color: var(--success);" id="sidebarServerStatus">ONLINE</div>
+        </div>
+        <div class="metric-card" style="margin-bottom: 12px;">
+            <div class="metric-label">Active SOS Alerts</div>
+            <div class="metric-value" style="color: var(--danger);" id="sidebarSosCount">0</div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="openCreateStudentModal()">+ Provision Student</button>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="view-content">
+
+        <!-- TAB 1: EXECUTIVE OVERVIEW -->
+        <section id="overviewTab" class="tab-view">
+            <div class="grid-4" style="margin-bottom: 24px;">
+                <div class="metric-card">
+                    <div class="metric-label">Registered Students</div>
+                    <div class="metric-value" id="metricTotalStudents">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Active Counselors</div>
+                    <div class="metric-value" style="color: var(--accent-blue);" id="metricCounselors">6</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Scheduled Appointments</div>
+                    <div class="metric-value" style="color: var(--accent-purple);" id="metricTotalAppointments">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Emergency SOS Count</div>
+                    <div class="metric-value" style="color: var(--danger);" id="metricSosTotal">0</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Campus Mood Analytics</div></div>
+                    <canvas id="adminMoodChart" style="max-height: 240px;"></canvas>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Emergency SOS Incident Frequency</div></div>
+                    <canvas id="adminSosChart" style="max-height: 240px;"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div class="card-title">System Audit & Event Stream</div></div>
+                <div class="terminal-box" id="executiveAuditConsole" style="height: 180px;">
+                    [System Audit Log] System boot sequence verified. Monitoring Spring Boot API requests...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: SCHEDULED COUNSELOR APPOINTMENTS WITH ACTION BUTTONS -->
+        <section id="appointmentsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📅 Campus Counselor Scheduled Appointments</div>
+                    <button class="btn btn-primary" onclick="loadScheduledAppointments()">🔄 Refresh Live Appointments</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Appt ID</th>
+                                <th>Student Details</th>
+                                <th>Assigned Counselor</th>
+                                <th>Specialization</th>
+                                <th>Date & Time</th>
+                                <th>Notes / Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointmentTableBody">
+                            <tr><td colspan="8" style="text-align: center;">Loading appointment bookings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: COMPLETE STUDENT MASTER DIRECTORY & EXPORT -->
+        <section id="studentsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🎓 Complete Student Master Directory</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="loadComprehensiveStudentDirectory()">🔄 Sync Data</button>
+                        <button class="btn btn-success" onclick="downloadStudentCsv()">📥 Export CSV</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student Information</th>
+                                <th>Guardian Details</th>
+                                <th>Guardian Contact</th>
+                                <th>Appts</th>
+                                <th>SOS Alerts</th>
+                                <th>Latest SOS Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentComprehensiveTableBody">
+                            <tr><td colspan="7" style="text-align: center;">Loading complete student records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-header"><div class="card-title" style="font-size: 15px;">Manual Student Provisioning</div></div>
+                <div class="grid-3" style="margin-bottom: 16px;">
+                    <div>
+                        <label>Student Name:</label>
+                        <input type="text" id="regStudentName" placeholder="Yash Thakre" value="Yash Thakre">
+                    </div>
+                    <div>
+                        <label>Email Address:</label>
+                        <input type="email" id="regStudentEmail" placeholder="yash@example.com" value="yash@example.com">
+                    </div>
+                    <div>
+                        <label>Phone Number:</label>
+                        <input type="text" id="regStudentPhone" placeholder="+919561453781" value="+919561453781">
+                    </div>
+                </div>
+                
+                <div class="grid-3" style="margin-bottom: 16px;">
+                    <div>
+                        <label>Guardian Name:</label>
+                        <input type="text" id="regGuardianName" placeholder="Parent Name" value="Parent Contact">
+                    </div>
+                    <div>
+                        <label>Guardian Phone:</label>
+                        <input type="text" id="regGuardianPhone" placeholder="+919876543210" value="+919876543210">
+                    </div>
+                    <div>
+                        <label>Guardian Email:</label>
+                        <input type="email" id="regGuardianEmail" placeholder="guardian@example.com" value="guardian@example.com">
+                    </div>
+                </div>
+
+                <button class="btn btn-success" style="width: 100%; margin-bottom: 16px;" onclick="registerStudentUser()">Provision New Student & Guardian Record</button>
+
+                <div class="terminal-box" id="studentProvisionLog" style="height: 100px;">
+                    Awaiting provisioning requests...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: COUNSELOR MANAGEMENT -->
+        <section id="counselorsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">Campus Counselor Provisioning</div></div>
+
+                <div class="grid-2" style="margin-bottom: 16px;">
+                    <div>
+                        <label>Counselor Full Name:</label>
+                        <input type="text" id="regCounselorName" placeholder="Dr. Ananya Roy" value="Dr. Ananya Roy">
+                    </div>
+                    <div>
+                        <label>Clinical Specialization:</label>
+                        <input type="text" id="regCounselorSpec" placeholder="Academic Stress & Crisis Intervention" value="Academic Stress & Crisis Intervention">
+                    </div>
+                    <div>
+                        <label>Official Email:</label>
+                        <input type="email" id="regCounselorEmail" placeholder="ananya.roy@campus.edu" value="ananya.roy@campus.edu">
+                    </div>
+                    <div>
+                        <label>Official Phone Number:</label>
+                        <input type="text" id="regCounselorPhone" placeholder="+919876543220" value="+919876543220">
+                    </div>
+                </div>
+
+                <button class="btn btn-success" style="width: 100%; margin-bottom: 16px;" onclick="registerCounselorProfile()">Add Campus Counselor Profile</button>
+
+                <div class="terminal-box" id="counselorProvisionLog" style="height: 120px;">
+                    Awaiting counselor profile registration...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: SOS LOGS -->
+        <section id="sosTab" class="tab-view hidden">
+            <div class="card" style="border-left: 6px solid var(--danger);">
+                <div class="card-header">
+                    <div class="card-title" style="color: var(--danger);">🚨 Global SOS Emergency Alerts</div>
+                    <button class="btn btn-danger" onclick="fetchAdminSosAlerts()">Poll Emergency Endpoint</button>
+                </div>
+
+                <div class="table-responsive" style="margin-bottom: 16px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Student ID</th>
+                                <th>Trigger Mode</th>
+                                <th>Location Metadata</th>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminSosTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Click Poll to load SOS logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="terminal-box" id="adminSosConsole" style="height: 140px;">
+                    SOS packet stream initialized...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: SYSTEM MONITORING -->
+        <section id="systemTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">⚙️ Data Audit & Query Console</div></div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                    <input type="number" id="auditQueryStudentId" value="1" placeholder="Student ID" style="width: 160px;">
+                    <button class="btn btn-secondary" onclick="queryStudentMoods()">Get Mood Logs</button>
+                    <button class="btn btn-secondary" onclick="queryStudentAppointments()">Get Appointments</button>
+                </div>
+
+                <div class="terminal-box" id="dataAuditConsole" style="height: 280px;">
+                    Query results will output here in formatted JSON...
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: GLOBAL PLATFORM METRICS -->
+        <section id="analyticsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">📈 Global Platform Analytics</div></div>
+                <div class="grid-2">
+                    <div><canvas id="platformUsageChart" style="max-height: 260px;"></canvas></div>
+                    <div><canvas id="systemLatencyChart" style="max-height: 260px;"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 8: REAL-TIME SYSTEM STREAM -->
+        <section id="logsTab" class="tab-view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📄 Real-Time Server Output Stream</div>
+                    <button class="btn btn-primary" onclick="clearLiveStreamLog()">Clear Log Window</button>
+                </div>
+                <div class="terminal-box" id="liveStreamConsole" style="height: 360px;">
+                    [System Initialization] Stream listener connected to WebSocket gateway...
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- CREATE STUDENT MODAL -->
+<div id="createStudentModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <h3>Quick Provision Student Account</h3>
+            <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closeCreateStudentModal()">✕</button>
+        </div>
+        <label>Student Name:</label>
+        <input type="text" id="modalStudentName" placeholder="Yash Thakre" value="Yash Thakre" style="margin-bottom: 12px;">
+        
+        <label>Email Address:</label>
+        <input type="email" id="modalStudentEmail" placeholder="yash@example.com" value="yash@example.com" style="margin-bottom: 12px;">
+        
+        <label>Phone Number:</label>
+        <input type="text" id="modalStudentPhone" placeholder="+919561453781" value="+919561453781" style="margin-bottom: 16px;">
+        
+        <button class="btn btn-primary" style="width: 100%;" onclick="submitModalProvisioning()">Provision Student</button>
+    </div>
+</div>
+
+<!-- JAVASCRIPT APPLICATION ENGINE -->
+<script>
+    const BASE_URL = "http://localhost:8080/api/v1";
+
+    let adminMoodChartInst = null;
+    let adminSosChartInst = null;
+    let platformUsageChartInst = null;
+    let systemLatencyChartInst = null;
+
+    let knownSosIds = new Set();
+    let isInitialSosPoll = true;
+
+    window.onload = () => {
+        startClock();
+        initCharts();
+        fetchAdminSosAlerts();
+        loadScheduledAppointments();
+        loadComprehensiveStudentDirectory();
+        startLogStreamSimulator();
+        
+        // Launch real-time SOS monitoring loop
+        startSosMonitoring();
+    };
+
+    function startClock() {
+        setInterval(() => {
+            document.getElementById('systemClock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+    }
+
+    function logoutAdmin() {
+        localStorage.removeItem('student_user');
+        window.location.href = "index.html";
+    }
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.remove('hidden');
+        if (btn) btn.classList.add('active');
+
+        if (tabId === 'appointmentsTab') loadScheduledAppointments();
+        if (tabId === 'studentsTab') loadComprehensiveStudentDirectory();
+        if (tabId === 'analyticsTab') renderAnalyticsCharts();
+    }
+
+    function initCharts() {
+        const ctxMood = document.getElementById('adminMoodChart').getContext('2d');
+        adminMoodChartInst = new Chart(ctxMood, {
+            type: 'pie',
+            data: {
+                labels: ['Calm', 'Happy', 'Anxious', 'Stressed', 'Sad'],
+                datasets: [{
+                    data: [14, 22, 9, 6, 3],
+                    backgroundColor: ['#16a34a', '#2563eb', '#d97706', '#dc2626', '#7c3aed']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxSos = document.getElementById('adminSosChart').getContext('2d');
+        adminSosChartInst = new Chart(ctxSos, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'SOS Alerts Triggered',
+                    data: [1, 0, 2, 1, 3, 0, 0],
+                    backgroundColor: '#dc2626'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    function renderAnalyticsCharts() {
+        if (platformUsageChartInst) platformUsageChartInst.destroy();
+        if (systemLatencyChartInst) systemLatencyChartInst.destroy();
+
+        const ctxUsage = document.getElementById('platformUsageChart').getContext('2d');
+        platformUsageChartInst = new Chart(ctxUsage, {
+            type: 'line',
+            data: {
+                labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+                datasets: [{
+                    label: 'Active Student Sessions',
+                    data: [120, 190, 300, 450],
+                    borderColor: '#2563eb',
+                    fill: false
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxLatency = document.getElementById('systemLatencyChart').getContext('2d');
+        systemLatencyChartInst = new Chart(ctxLatency, {
+            type: 'bar',
+            data: {
+                labels: ['Auth API', 'Chat API', 'Mood API', 'SOS Dispatch'],
+                datasets: [{
+                    label: 'Avg Response Time (ms)',
+                    data: [42, 110, 35, 85],
+                    backgroundColor: '#0d9488'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function logConsoleOutput(elementId, status, text) {
+        const consoleEl = document.getElementById(elementId);
+        try {
+            const parsed = JSON.parse(text);
+            consoleEl.innerText = `[Status ${status}]\n` + JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            consoleEl.innerText = `[Status ${status}]\n${text}`;
+        }
+    }
+
+    function startLogStreamSimulator() {
+        const el = document.getElementById('liveStreamConsole');
+        const events = [
+            "GET /api/v1/admin/appointments 200 OK - 28ms",
+            "POST /api/v1/chat/send 200 OK - 118ms [AI Token Generation]",
+            "GET /api/v1/admin/students/comprehensive 200 OK - 35ms",
+            "POST /api/v1/counselors/book 201 CREATED - 45ms",
+            "HEARTBEAT - MySQL Pool Healthy (0 active connections)"
+        ];
+        setInterval(() => {
+            const ev = events[Math.floor(Math.random() * events.length)];
+            el.innerText += `\n[${new Date().toLocaleTimeString()}] ${ev}`;
+            el.scrollTop = el.scrollHeight;
+        }, 4000);
+    }
+
+    function clearLiveStreamLog() {
+        document.getElementById('liveStreamConsole').innerText = "[Log stream cleared]";
+    }
+
+    /* Helper: Parse raw location to produce clean Google Maps URL */
+    function formatMapsUrl(rawLocation) {
+        if (!rawLocation) return null;
+        
+        const coordsMatch = rawLocation.match(/[-+]?\d*\.\d+|[-+]?\d+/g);
+        if (coordsMatch && coordsMatch.length >= 2) {
+            return `https://www.google.com/maps/search/?api=1&query=${coordsMatch[0]},${coordsMatch[1]}`;
+        }
+        
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawLocation)}`;
+    }
+
+    /* ============================================================
+     * REAL-TIME SOS ALERT MONITOR & FLOATING TOAST ENGINE
+     * ============================================================ */
+    function startSosMonitoring() {
+        setInterval(pollForNewSosAlerts, 3000);
+    }
+
+    async function pollForNewSosAlerts() {
+        try {
+            const res = await fetch(`${BASE_URL}/sos/all`);
+            if (!res.ok) return;
+
+            const alerts = await res.json();
+            
+            alerts.forEach(alert => {
+                if (!knownSosIds.has(alert.id)) {
+                    knownSosIds.add(alert.id);
+                    if (!isInitialSosPoll) {
+                        triggerSosToast(alert);
+                    }
+                }
+            });
+
+            if (isInitialSosPoll) {
+                isInitialSosPoll = false;
+            }
+
+        } catch (err) {
+            console.warn("SOS polling pulse paused:", err.message);
+        }
+    }
+
+    function triggerSosToast(alertData) {
+        const container = document.getElementById('sosToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'sos-toast';
+        toast.id = `toast-sos-${alertData.id}`;
+
+        const timestampStr = alertData.timestamp ? new Date(alertData.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+
+        const mapsUrl = formatMapsUrl(alertData.locationData);
+        const locationDisplay = mapsUrl 
+            ? `<a href="${mapsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">📍 ${alertData.locationData}</a>`
+            : (alertData.locationData || 'GPS Coordinates Pending');
+
+        toast.innerHTML = `
+            <div class="sos-toast-header">
+                <span>🚨 EMERGENCY SOS ALERT #${alertData.id}</span>
+                <small style="color:#ffffffaa; font-weight: normal;">${timestampStr}</small>
+            </div>
+            <div class="sos-toast-body">
+                <strong>Student ID:</strong> #${alertData.studentId}<br>
+                <strong>Trigger Mode:</strong> ${alertData.triggerType || 'CRITICAL RISK DETECTED'}<br>
+                <strong>Location:</strong> ${locationDisplay}
+            </div>
+            <div class="sos-toast-actions">
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background: rgba(255,255,255,0.2); color: white;" 
+                        onclick="dismissToast('toast-sos-${alertData.id}')">
+                    Dismiss
+                </button>
+                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" 
+                        onclick="viewSosDetails(${alertData.id})">
+                    View Incident
+                </button>
+            </div>
+        `;
+
+        container.appendChild(toast);
+        playAlertSound();
+        fetchAdminSosAlerts();
+    }
+
+    function dismissToast(toastId) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.style.animation = 'fadeOutToast 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
+    function viewSosDetails(alertId) {
+        dismissToast(`toast-sos-${alertId}`);
+        const sosNavBtn = document.querySelector("button[onclick*='sosTab']");
+        switchTab('sosTab', sosNavBtn);
+        fetchAdminSosAlerts();
+    }
+
+    function playAlertSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) {
+            // Audio policy handle
+        }
+    }
+
+    /* ============================================================
+     * APPOINTMENTS MANAGEMENT & INTERACTIVE STATUS UPDATES
+     * ============================================================ */
+    async function loadScheduledAppointments() {
+        const tbody = document.getElementById('appointmentTableBody');
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">Loading live appointments...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/admin/appointments`);
+            const appointments = await res.json();
+            
+            document.getElementById('metricTotalAppointments').innerText = appointments.length;
+
+            if (!appointments || appointments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No counselor appointments scheduled yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = appointments.map(app => {
+                const status = app.status || 'REQUESTED';
+                let badgeClass = 'badge-pending';
+                if (status === 'CONFIRMED') badgeClass = 'badge-active';
+                if (status === 'CANCELLED') badgeClass = 'badge-alert';
+
+                return `
+                    <tr>
+                        <td>#${app.appointmentId}</td>
+                        <td>
+                            <strong>${app.studentName}</strong><br>
+                            <small style="color:var(--text-muted);">${app.studentEmail} | ${app.studentPhone}</small>
+                        </td>
+                        <td><strong>${app.counselorName}</strong></td>
+                        <td><small>${app.counselorSpecialization}</small></td>
+                        <td>${new Date(app.appointmentTime).toLocaleString()}</td>
+                        <td>${app.notes || 'N/A'}</td>
+                        <td><span class="badge ${badgeClass}">${status}</span></td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                ${status !== 'CONFIRMED' ? `
+                                    <button class="btn btn-success" style="padding: 4px 8px; font-size: 12px;" 
+                                            onclick="updateAppointmentStatus(${app.appointmentId}, 'CONFIRMED')">
+                                        ✓ Approve
+                                    </button>
+                                ` : ''}
+                                ${status !== 'CANCELLED' ? `
+                                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" 
+                                            onclick="updateAppointmentStatus(${app.appointmentId}, 'CANCELLED')">
+                                        ✕ Cancel
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger); text-align: center;">Failed to load appointments. Ensure backend is running.</td></tr>`;
+        }
+    }
+
+    async function updateAppointmentStatus(appointmentId, status) {
+        try {
+            const res = await fetch(`${BASE_URL}/admin/appointments/${appointmentId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+
+            if (res.ok) {
+                loadScheduledAppointments();
+            } else {
+                alert("Failed to update status.");
+            }
+        } catch (err) {
+            alert("Server communication error.");
+        }
+    }
+
+    /* ============================================================
+     * COMPLETE COMPREHENSIVE STUDENT DIRECTORY & CSV EXPORT
+     * ============================================================ */
+    async function loadComprehensiveStudentDirectory() {
+        const tbody = document.getElementById('studentComprehensiveTableBody');
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Syncing with server...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/admin/students/comprehensive`);
+            if (!res.ok) {
+                const fallbackRes = await fetch(`${BASE_URL}/students/full-profiles`);
+                const fallbackData = await fallbackRes.json();
+                renderFallbackStudentProfiles(fallbackData);
+                return;
+            }
+
+            const data = await res.json();
+            document.getElementById('metricTotalStudents').innerText = data.length;
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No student records found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(s => `
+                <tr>
+                    <td>#${s.studentId}</td>
+                    <td>
+                        <strong>${s.studentName}</strong><br>
+                        <small style="color: var(--text-muted);">${s.studentEmail} | ${s.studentPhone || 'N/A'}</small>
+                    </td>
+                    <td>
+                        <strong>${s.guardianName || 'N/A'}</strong><br>
+                        <small style="color: var(--text-muted);">${s.relationship || 'Guardian'}</small>
+                    </td>
+                    <td>
+                        ${s.guardianEmail || 'N/A'}<br>
+                        <small style="color: var(--text-muted);">${s.guardianPhone || 'N/A'}</small>
+                    </td>
+                    <td><span class="badge badge-pending">${s.totalAppointments || 0}</span></td>
+                    <td>
+                        <span class="badge ${s.totalSosAlerts > 0 ? 'badge-alert' : 'badge-active'}">
+                            ${s.totalSosAlerts || 0}
+                        </span>
+                    </td>
+                    <td>${s.lastSosTimestamp ? new Date(s.lastSosTimestamp).toLocaleString() : 'None'}</td>
+                </tr>
+            `).join('');
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger); text-align: center;">Error loading student directory.</td></tr>`;
+        }
+    }
+
+    function renderFallbackStudentProfiles(profiles) {
+        const tbody = document.getElementById('studentComprehensiveTableBody');
+        document.getElementById('metricTotalStudents').innerText = profiles.length;
+
+        if (!profiles || profiles.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No students registered.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = profiles.map(p => `
+            <tr>
+                <td>#${p.studentId || p.id}</td>
+                <td>
+                    <strong>${p.studentName || p.name}</strong><br>
+                    <small style="color: var(--text-muted);">${p.studentEmail || p.email} | ${p.studentPhone || p.phoneNumber || 'N/A'}</small>
+                </td>
+                <td>
+                    <strong>${p.guardianName || 'N/A'}</strong><br>
+                    <small style="color: var(--text-muted);">${p.relationship || 'Guardian'}</small>
+                </td>
+                <td>
+                    ${p.guardianEmail || 'N/A'}<br>
+                    <small style="color: var(--text-muted);">${p.guardianPhone || 'N/A'}</small>
+                </td>
+                <td><span class="badge badge-pending">0</span></td>
+                <td><span class="badge badge-active">0</span></td>
+                <td>None</td>
+            </tr>
+        `).join('');
+    }
+
+    function downloadStudentCsv() {
+        const exportUrl = `${BASE_URL}/admin/students/export-csv`;
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.setAttribute('download', 'student_records.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    async function registerStudentUser() {
+        const payload = {
+            name: document.getElementById('regStudentName').value,
+            email: document.getElementById('regStudentEmail').value,
+            phoneNumber: document.getElementById('regStudentPhone').value,
+            password: "password123",
+            guardianName: document.getElementById('regGuardianName').value,
+            guardianPhone: document.getElementById('regGuardianPhone').value,
+            guardianEmail: document.getElementById('regGuardianEmail').value
+        };
+
+        try {
+            const res = await fetch(`${BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            logConsoleOutput('studentProvisionLog', res.status, text);
+
+            if (res.ok) {
+                alert("Student and Guardian successfully registered!");
+                loadComprehensiveStudentDirectory();
+            }
+        } catch (err) {
+            document.getElementById('studentProvisionLog').innerText = `[Error]: ${err.message}`;
+        }
+    }
+
+    async function registerCounselorProfile() {
+        const payload = {
+            name: document.getElementById('regCounselorName').value,
+            specialization: document.getElementById('regCounselorSpec').value,
+            email: document.getElementById('regCounselorEmail').value,
+            phoneNumber: document.getElementById('regCounselorPhone').value,
+            isAvailable: true
+        };
+
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            logConsoleOutput('counselorProvisionLog', res.status, text);
+        } catch (err) {
+            document.getElementById('counselorProvisionLog').innerText = `[Error]: ${err.message}`;
+        }
+    }
+
+    async function fetchAdminSosAlerts() {
+        const tbody = document.getElementById('adminSosTableBody');
+        const consoleEl = document.getElementById('adminSosConsole');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Polling emergency endpoint...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/sos/all`);
+            const alerts = await res.json();
+            document.getElementById('sidebarSosCount').innerText = alerts.length;
+            document.getElementById('metricSosTotal').innerText = alerts.length;
+
+            if (!alerts || alerts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No emergency alerts recorded.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = alerts.map(a => {
+                const mapsUrl = formatMapsUrl(a.locationData);
+                const locationCell = mapsUrl 
+                    ? `<a href="${mapsUrl}" target="_blank" style="color: var(--accent-blue); font-weight: bold; text-decoration: underline;">📍 ${a.locationData}</a>`
+                    : (a.locationData || 'GPS Unavailable');
+
+                return `
+                    <tr>
+                        <td>#${a.id}</td>
+                        <td><strong>Student #${a.studentId}</strong></td>
+                        <td><span class="badge badge-alert">${a.triggerType || 'CRITICAL'}</span></td>
+                        <td>${locationCell}</td>
+                        <td>${new Date(a.timestamp).toLocaleString()}</td>
+                        <td><span class="badge badge-active">${a.status || 'DISPATCHED'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            consoleEl.innerText = `[SOS Command Stream]\n` + JSON.stringify(alerts, null, 2);
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">[Error]: ${err.message}</td></tr>`;
+        }
+    }
+
+    async function queryStudentMoods() {
+        const id = document.getElementById('auditQueryStudentId').value;
+        try {
+            const res = await fetch(`${BASE_URL}/moods/student/${id}`);
+            const text = await res.text();
+            logConsoleOutput('dataAuditConsole', res.status, text);
+        } catch (err) { document.getElementById('dataAuditConsole').innerText = `[Error]: ${err.message}`; }
+    }
+
+    async function queryStudentAppointments() {
+        const id = document.getElementById('auditQueryStudentId').value;
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/appointments/student/${id}`);
+            const text = await res.text();
+            logConsoleOutput('dataAuditConsole', res.status, text);
+        } catch (err) { document.getElementById('dataAuditConsole').innerText = `[Error]: ${err.message}`; }
+    }
+
+    function openCreateStudentModal() { document.getElementById('createStudentModal').style.display = 'flex'; }
+    function closeCreateStudentModal() { document.getElementById('createStudentModal').style.display = 'none'; }
+
+    async function submitModalProvisioning() {
+        const payload = {
+            name: document.getElementById('modalStudentName').value,
+            email: document.getElementById('modalStudentEmail').value,
+            phoneNumber: document.getElementById('modalStudentPhone').value,
+            password: "password123",
+            guardianName: "Default Guardian",
+            guardianPhone: "+919876543210",
+            guardianEmail: "guardian@example.com"
+        };
+
+        try {
+            const res = await fetch(`${BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert("Student account provisioned!");
+                closeCreateStudentModal();
+                loadComprehensiveStudentDirectory();
+            }
+        } catch (e) { alert("Provisioning failed."); }
+    }
+</script>
+
+</body>
+</html>

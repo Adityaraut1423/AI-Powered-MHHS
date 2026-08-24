@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace — Student Wellness Portal & JARVIS AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Face API CDN for Automatic Facial Expression Detection -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a90e2; --dark: #1e293b; --danger: #e74c3c; --success: #27ae60;
+            --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; --border-color: #e2e8f0;
+            --accent-teal: #4fa8a0; --warning: #d97706;
+        }
+
+        body.dark-mode {
+            --bg-main: #0b0f19; --card-bg: #111827; --text-main: #f9fafb; --border-color: #1f2937; --dark: #0f172a;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        .auth-container { max-width: 460px; margin: 40px auto; background: var(--card-bg); padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
+        .auth-toggle { display: flex; justify-content: space-around; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); }
+        .auth-toggle span { padding: 10px; cursor: pointer; font-weight: bold; color: #777; }
+        .auth-toggle span.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+        .dashboard-container { display: none; grid-template-columns: 300px 1fr; min-height: 100vh; }
+        .sidebar { background: var(--dark); color: white; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; }
+        .sidebar h2 { color: var(--primary); margin-top: 0; font-size: 22px; }
+        .nav-item { padding: 12px 16px; margin: 4px 0; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 14px; font-weight: 600; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.12); color: var(--primary); }
+        
+        .main-content { padding: 32px; overflow-y: auto; max-width: 1400px; }
+        .card { background: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); margin-bottom: 24px; border: 1px solid var(--border-color); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        
+        input, select, textarea, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; background: var(--card-bg); color: var(--text-main); font-size: 14px; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        button.sos-btn { background: var(--danger); font-size: 16px; padding: 16px; margin-top: 12px; }
+
+        .voice-btn {
+            background: linear-gradient(135deg, #0d9488, var(--accent-teal));
+            color: white; border: none; font-weight: bold; cursor: pointer; width: auto; padding: 12px 20px;
+            display: flex; align-items: center; gap: 8px; border-radius: 8px; transition: all 0.3s;
+        }
+        .voice-btn.listening { background: var(--danger); animation: pulseSos 1.5s infinite; }
+
+        @keyframes pulseSos {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .guardian-section-title {
+            border-top: 1px dashed var(--border-color); margin: 18px 0 10px; padding-top: 12px;
+            font-weight: bold; color: var(--accent-teal); font-size: 13px; text-transform: uppercase;
+        }
+
+        .chat-box { height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; overflow-y: auto; background: rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 12px; }
+        .chat-msg { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+        .chat-msg.user { background: var(--primary); color: white; align-self: flex-end; }
+        .chat-msg.ai { background: rgba(0,0,0,0.05); color: var(--text-main); align-self: flex-start; border: 1px solid var(--border-color); }
+        .chat-msg.doctor { background: #0d9488; color: white; align-self: flex-start; }
+        .chat-msg.counselor { background: #7c3aed; color: white; align-self: flex-start; }
+        .chat-msg.alert { background: #fee2e2; color: #991b1b; width: 92%; align-self: center; text-align: center; font-weight: bold; }
+
+        .terminal-box {
+            background: #0f172a; color: #38bdf8; font-family: 'Consolas', 'Courier New', monospace;
+            padding: 16px; border-radius: 8px; height: 160px; overflow-y: auto; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
+        }
+
+        .breath-container { text-align: center; padding: 24px; }
+        #breathCircle { width: 120px; height: 120px; border-radius: 50%; background: var(--primary); margin: 24px auto; transition: transform 4s ease-in-out; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .forum-post { border-bottom: 1px solid var(--border-color); padding: 16px 0; }
+        .forum-badge { background: rgba(37,99,235,0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-alert { background: #fee2e2; color: #991b1b; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- AUTH SECTION -->
+<div id="authSection" class="auth-container">
+    <h2 style="text-align: center;">MindSpace Access</h2>
+    <div class="auth-toggle">
+        <span id="tabLogin" class="active" onclick="switchTab('login')">Sign In</span>
+        <span id="tabRegister" onclick="switchTab('register')">Create Account</span>
+    </div>
+
+    <!-- SIGN IN FORM -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+        <label>Student Email Address</label>
+        <input type="email" id="loginEmail" required placeholder="shantanu@example.com" value="shantanu@example.com">
+        <label>Password</label>
+        <input type="password" id="loginPassword" required placeholder="••••••••" value="password123">
+        <button type="submit" style="margin-top: 20px;">Sign In to MindSpace</button>
+    </form>
+
+    <!-- MANDATORY GUARDIAN REGISTRATION FORM -->
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+        <label>Full Name *</label>
+        <input type="text" id="regName" required placeholder="Shantanu Ingle">
+        
+        <label>Student Email Address *</label>
+        <input type="email" id="regEmail" required placeholder="shantanu@example.com">
+        
+        <label>Student Phone Number *</label>
+        <input type="text" id="regPhone" required placeholder="+919561453781">
+        
+        <label>Password *</label>
+        <input type="password" id="regPassword" required placeholder="••••••••">
+
+        <div class="guardian-section-title">🚨 Mandatory Emergency Contact (Guardian)</div>
+
+        <label>Guardian / Parent Name *</label>
+        <input type="text" id="regGuardianName" required placeholder="Guardian Full Name">
+
+        <label>Guardian Phone Number *</label>
+        <input type="text" id="regGuardianPhone" required placeholder="+919876543210">
+
+        <label>Guardian Email Address (For Emergency SOS Alerts) *</label>
+        <input type="email" id="regGuardianEmail" required placeholder="guardian@example.com">
+
+        <button type="submit" style="margin-top: 20px;">Create Account & Register</button>
+    </form>
+    <div id="authStatus" style="margin-top: 15px; font-size: 13px; text-align: center; color: var(--danger);"></div>
+</div>
+
+<!-- DASHBOARD SECTION -->
+<div id="dashboardSection" class="dashboard-container">
+    <div class="sidebar">
+        <div>
+            <h2>MindSpace</h2>
+            <p id="userGreeting" style="font-size: 13px; opacity: 0.8; margin-bottom: 24px;"></p>
+
+            <div class="nav-item active" onclick="showSection('chatSec')">🤖 24/7 AI Voice Chat</div>
+            <div class="nav-item" onclick="showSection('doctorChatSec')">🩺 Doctor Direct Chat & Call</div>
+            <div class="nav-item" onclick="showSection('counselorChatSec')">💬 Talk with Counselor</div>
+            <div class="nav-item" onclick="showSection('predictiveAiSec')">🧠 Predictive AI & Biometrics</div>
+            <div class="nav-item" onclick="showSection('moodSec')">📊 Mood Log & Graph</div>
+            <div class="nav-item" onclick="showSection('gratitudeSec')">📖 Gratitude & Stress Relief</div>
+            <div class="nav-item" onclick="showSection('screeningSec')">📋 Clinical Screening (PHQ-9)</div>
+            <div class="nav-item" onclick="showSection('breathSec')">🧘 Guided Box Breathing</div>
+            <div class="nav-item" onclick="showSection('counselorSec')">📅 Book Campus Counselor</div>
+            <div class="nav-item" onclick="showSection('helplinesSec')">☎️ Emergency Helplines</div>
+            <div class="nav-item" onclick="showSection('sosSec')" style="color: #ff6b6b;">🚨 Trigger Emergency SOS</div>
+        </div>
+
+        <div>
+            <button onclick="toggleTheme()" style="background: transparent; border: 1px solid #ffffff44; margin-bottom: 10px;">🌓 Toggle Dark Theme</button>
+            <button onclick="handleLogout()" style="background: transparent; border: 1px solid #777;">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <!-- 1. AI CHAT WITH JARVIS VOICE OUTPUT & INPUT -->
+        <div id="chatSec" class="content-section">
+            <div class="card">
+                <h3>24/7 AI Mental Health Voice Assistant</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                    Type your message or click <strong>🎙️ Talk with JARVIS</strong> to speak naturally. JARVIS will respond out loud.
+                </p>
+                <div id="chatBox" class="chat-box">
+                    <div class="chat-msg ai">Hello! I am here to listen and support you unconditionally. How are you feeling today?</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <input type="text" id="chatInput" placeholder="Type or speak your message..." onkeypress="if(event.key==='Enter') sendAiMessage()">
+                    <button onclick="sendAiMessage()" style="width: 100px;">Send</button>
+                    <button id="voiceToggleBtn" class="voice-btn" onclick="toggleVoiceMode()">
+                        <span id="voiceMicIcon">🎙️</span> <span id="voiceBtnLabel">Talk with JARVIS</span>
+                    </button>
+                </div>
+                <div id="voiceStatusIndicator" style="margin-top: 8px; font-size: 12px; font-weight: bold; color: var(--primary);"></div>
+            </div>
+        </div>
+
+        <!-- 1.5 DOCTOR DIRECT CHAT & VIDEO CALL HUB -->
+        <div id="doctorChatSec" class="content-section hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h3>🩺 Secure Chat with Dr. Sameer Deshmukh, M.D.</h3>
+                    <button class="btn btn-success" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="joinDoctorVideoCall()">📹 Join Video Consultation Room</button>
+                </div>
+                
+                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                    Direct encrypted communication channel with your assigned campus psychiatrist.
+                </p>
+                
+                <div id="doctorDirectChatBox" class="chat-box">
+                    <div class="chat-msg ai">Establishing secure connection with Dr. Deshmukh's console...[cite: 6]</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <input type="text" id="studentDoctorChatInput" placeholder="Type secure message to Dr. Deshmukh..." onkeypress="if(event.key==='Enter') sendStudentMessageToDoctor()">
+                    <button onclick="sendStudentMessageToDoctor()" style="width: 100px;">Send</button>
+                </div>
+            </div>
+
+            <div id="studentVideoModal" class="card hidden" style="border: 2px solid var(--success);">
+                <div class="card-header">
+                    <h3 style="color: var(--success);">📹 Live Video Session with Dr. Deshmukh</h3>
+                    <button class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="leaveStudentVideoCall()">Leave Call</button>
+                </div>
+                <div style="background: #000; width: 100%; max-width: 500px; height: 350px; margin: 0 auto; border-radius: 8px; overflow: hidden; position: relative;">
+                    <video id="studentWebcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; font-size: 12px; border-radius: 4px;">Connected to ROOM-PSYCH-9921</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1.5.1 TALK WITH COUNSELOR DIRECT CHAT HUB -->
+        <div id="counselorChatSec" class="content-section hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h3>💬 Direct Chat with Campus Counselor</h3>
+                    <button class="btn btn-success" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="joinCounselorVideoCall()">📹 Join Counselor Video Room</button>
+                </div>
+                
+                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                    Secure, confidential messaging channel with your assigned campus mental health counselor.
+                </p>
+                
+                <div id="counselorDirectChatBox" class="chat-box">
+                    <div class="chat-msg ai">Establishing secure connection with campus counselor...</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <input type="text" id="studentCounselorChatInput" placeholder="Type message to counselor..." onkeypress="if(event.key==='Enter') sendStudentMessageToCounselor()">
+                    <button onclick="sendStudentMessageToCounselor()" style="width: 100px;">Send</button>
+                </div>
+            </div>
+
+            <div id="counselorVideoModal" class="card hidden" style="border: 2px solid var(--success);">
+                <div class="card-header">
+                    <h3 style="color: var(--success);">📹 Live Video Session with Counselor</h3>
+                    <button class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="leaveCounselorVideoCall()">Leave Call</button>
+                </div>
+                <div style="background: #000; width: 100%; max-width: 500px; height: 350px; margin: 0 auto; border-radius: 8px; overflow: hidden; position: relative;">
+                    <video id="counselorWebcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; font-size: 12px; border-radius: 4px;">Connected to Campus Counselor Room</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1.6 ADVANCED CLINICAL & PREDICTIVE AI MODULES -->
+        <div id="predictiveAiSec" class="content-section hidden">
+            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 28px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);">
+                <h2 style="margin: 0; font-size: 22px; font-weight: 700;">🧠 Clinical Predictive AI & Biometric Suite</h2>
+                <p style="margin: 6px 0 0 0; font-size: 13px; color: #94a3b8;">Real-time health telemetry syncing, 14-day mood forecasting, and cognitive behavioral therapy (CBT) reframing.</p>
+            </div>
+
+            <div class="grid-2" style="margin-bottom: 24px;">
+                <div class="card" style="border-radius: 16px;">
+                    <div class="card-header"><div class="card-title">⌚ Smartwatch & Biometric Telemetry</div></div>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Synced with Apple Health / Google Fit framework.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Resting Heart Rate</div>
+                            <div id="bioRhr" style="font-size: 24px; font-weight: 800; color: var(--danger); margin-top: 4px;">72 bpm</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Heart Rate Variability</div>
+                            <div id="bioHrv" style="font-size: 24px; font-weight: 800; color: var(--success); margin-top: 4px;">65 ms</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Sleep Cycle Avg</div>
+                            <div id="bioSleep" style="font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px;">6.2 hrs</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Daily Step Count</div>
+                            <div id="bioSteps" style="font-size: 24px; font-weight: 800; color: var(--accent-teal); margin-top: 4px;">7,420</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="syncWearableData()">🔄 Sync Wearable Telemetry</button>
+                </div>
+
+                <div class="card" style="border-radius: 16px;">
+                    <div class="card-header"><div class="card-title">🤖 JARVIS AI CBT Reframing Assistant</div></div>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Dissect cognitive distortions and receive real-time reframes.</p>
+                    
+                    <label>Describe your negative thought or stressor:</label>
+                    <textarea id="cbtInputText" rows="3" placeholder="e.g., I failed my quiz today, so I am going to fail the entire semester..."></textarea>
+                    
+                    <button class="btn btn-primary" style="margin-top: 12px;" onclick="runCbtReframing()">Analyze & Reframe Thought ✨</button>
+                    
+                    <div id="cbtOutputBox" class="terminal-box" style="height: 110px; margin-top: 12px; font-size: 11px;">
+                        JARVIS cognitive restructuring engine ready...
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-radius: 16px;">
+                <div class="card-header">
+                    <div class="card-title">📈 14-Day Predictive Mood Forecasting & Risk Scoring</div>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--warning); background: #fef3c7; padding: 4px 10px; border-radius: 20px;">ML Risk Analysis Active</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Machine learning projection based on sleep telemetry, biometric HRV variance, and historical check-ins.</p>
+                <canvas id="predictiveMoodChart" style="width:100%; max-height:260px;"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. MOOD LOG & ANALYTICS WITH AUTOMATIC DETECT & AUTO-SAVE -->
+        <div id="moodSec" class="content-section hidden">
+            <div class="card">
+                <h3>Log Daily Mood</h3>
+                
+                <div style="background: rgba(0,0,0,0.03); padding: 16px; border-radius: 10px; text-align: center; margin-bottom: 16px; border: 1px dashed var(--border-color);">
+                    <div style="position: relative; width: 280px; height: 210px; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;">
+                        <video id="faceWebcam" width="280" height="210" autoplay muted style="object-fit: cover;"></video>
+                        <div id="scanStatus" style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 6px; font-size: 11px; border-radius: 4px; font-weight: bold;">
+                            Initializing Automatic Scanner...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Select Mood State (Auto-Detected):</label>
+                        <select id="moodSelect">
+                            <option value="CALM">Calm</option>
+                            <option value="HAPPY">Happy</option>
+                            <option value="ANXIOUS">Anxious</option>
+                            <option value="STRESSED">Stressed</option>
+                            <option value="SAD">Sad</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Intensity Score (1 to 10):</label>
+                        <input type="number" id="intensityScore" min="1" max="10" value="5">
+                    </div>
+                </div>
+                <label style="margin-top: 10px;">Personal Journal Entry:</label>
+                <textarea id="moodNote" rows="2" placeholder="Auto-detected mood note will record here..."></textarea>
+                <button onclick="manualSaveMood()" style="margin-top: 12px;">Save Mood Entry</button>
+                <div id="autoSaveStatus" style="margin-top: 10px; font-weight: bold; color: var(--success); text-align: center;"></div>
+            </div>
+            <div class="card">
+                <h3>Mood Trend Graph</h3>
+                <canvas id="moodChart" style="width:100%; max-height:240px;"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. GRATITUDE JOURNAL & STRESS RELIEF GAME -->
+        <div id="gratitudeSec" class="content-section hidden">
+            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 28px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">✨ Mindful Sanctuary & Reflection</h2>
+                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #94a3b8;">Cultivate cognitive resilience through structured gratitude and sensory grounding.</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.15);">
+                    🌿 Daily Wellness Suite
+                </div>
+            </div>
+
+            <div class="grid-2" style="align-items: start;">
+                <div class="card" style="border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                        <div style="background: rgba(37,99,235,0.1); color: var(--primary); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold;">📖</div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Daily Gratitude Journal</h3>
+                            <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Record three daily anchors of positivity.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 14px; top: 22px; font-size: 12px; font-weight: bold; color: var(--primary);">01</span>
+                            <input type="text" id="grat1" placeholder="What brought a moment of genuine joy today?" style="padding-left: 36px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.01);">
+                        </div>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 14px; top: 22px; font-size: 12px; font-weight: bold; color: var(--primary);">02</span>
+                            <input type="text" id="grat2" placeholder="Who offered meaningful support recently?" style="padding-left: 36px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.01);">
+                        </div>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 14px; top: 22px; font-size: 12px; font-weight: bold; color: var(--primary);">03</span>
+                            <input type="text" id="grat3" placeholder="What is a small milestone you achieved?" style="padding-left: 36px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.01);">
+                        </div>
+                    </div>
+
+                    <button onclick="saveGratitude()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.25); transition: all 0.2s;">
+                        Save Journal Entry ✨
+                    </button>
+                </div>
+
+                <div class="card" style="text-align: center; border: 1px solid var(--border-color); border-radius: 16px; background: linear-gradient(180deg, var(--card-bg), rgba(37,99,235,0.01)); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 20px;">🫧</span>
+                        <h3 style="margin: 0; color: var(--primary); font-size: 16px; font-weight: 700;">Mindful Sensory Bubble Pop</h3>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Engage tactile micro-interactions to dissolve acute cognitive tension.</p>
+                    
+                    <div id="bubbleGameContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; max-width: 320px; margin: 0 auto 16px auto; background: rgba(0,0,0,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color);">
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 8px;">
+                        <span id="bubbleScoreText" style="font-size: 12px; font-weight: 600; color: var(--success); background: #dcfce7; padding: 4px 10px; border-radius: 20px;">Popped: 0 bubbles</span>
+                        <button onclick="resetBubbleGame()" style="width: auto; padding: 6px 14px; font-size: 12px; background: var(--dark); border-radius: 8px; font-weight: 600; color: white; border: none; cursor: pointer;">Reset Board</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-radius: 16px; margin-top: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                <div class="card-header">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700;">📜 Past Reflections Archive</h3>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Encrypted Storage</span>
+                </div>
+                <div id="gratitudeHistory" style="font-size: 13px; line-height: 1.6; color: var(--text-main);">Loading history...</div>
+            </div>
+        </div>
+
+        <!-- 4. CLINICAL SCREENING -->
+        <div id="screeningSec" class="content-section hidden">
+            <div class="card">
+                <h3>PHQ-9 Depression Screening Questionnaire</h3>
+                <p style="font-size: 13px; color: #666;">Over the last 2 weeks, how often have you been bothered by feeling down, depressed, or hopeless?</p>
+                <select id="phqScore">
+                    <option value="0">Not at all (Score: 0)</option>
+                    <option value="3">Several days (Score: 3)</option>
+                    <option value="7">More than half the days (Score: 7)</option>
+                    <option value="12">Nearly every day (Score: 12)</option>
+                </select>
+                <button onclick="submitScreening('PHQ-9')" style="margin-top: 12px;">Submit Evaluation</button>
+                <div id="screeningResult" style="margin-top: 16px; font-weight: bold;"></div>
+            </div>
+        </div>
+
+        <!-- 6. GUIDED BREATHING -->
+        <div id="breathSec" class="content-section hidden">
+            <div class="card breath-container">
+                <h3>Box Breathing Exercise</h3>
+                <p style="font-size: 13px; color: #666;">Inhale for 4s, hold for 4s, exhale for 4s, hold for 4s.</p>
+                <div id="breathCircle"></div>
+                <h4 id="breathInstruction">Click 'Start Session' to begin</h4>
+                <button onclick="toggleBreathing()" id="breathBtn" style="width: 200px;">Start Session</button>
+            </div>
+        </div>
+
+        <!-- 7. COUNSELOR BOOKING & APPOINTMENT STATUS -->
+        <div id="counselorSec" class="content-section hidden">
+            <div class="card">
+                <h3>Book Confidential Campus Session</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+                    Select an on-campus counselor based on their area of specialization:
+                </p>
+                
+                <label>Select Counselor & Specialization:</label>
+                <select id="counselorSelect">
+                    <option value="1">Dr. Ananya Roy — Academic Stress & Crisis Intervention</option>
+                    <option value="2">Prof. Rajesh Deshmukh — Career Anxiety & Placement Pressure</option>
+                    <option value="3">Dr. Sunita Kulkarni — Relationship & Hostel Life Guidance</option>
+                    <option value="4">Dr. Vikramaditya Joshi — Clinical Depression & Anxiety Disorders</option>
+                    <option value="5">Ms. Pooja Verma — Mindfulness, Grief & Trauma Healing</option>
+                    <option value="6">Dr. Sameer Patil — Sleep Hygiene & Substance De-Addiction</option>
+                </select>
+
+                <label style="margin-top: 12px;">Preferred Appointment Date & Time:</label>
+                <input type="datetime-local" id="appointmentTime" value="2026-08-10T11:00">
+
+                <label style="margin-top: 12px;">Reason / Notes for Consultation (Confidential):</label>
+                <textarea id="bookingNotes" rows="2" placeholder="Briefly describe what you'd like to discuss..."></textarea>
+
+                <button onclick="bookCounselor()" style="margin-top: 16px;">Schedule Appointment</button>
+                <div id="bookingStatus" style="margin-top: 12px; font-weight: bold;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Booked Appointments & Status</h3>
+                    <button onclick="loadStudentAppointments()" style="width: auto; padding: 6px 14px; font-size: 12px;">🔄 Refresh Status</button>
+                </div>
+                <div id="studentAppointmentsList" style="font-size: 14px;">
+                    Loading your appointment statuses...
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. HELPLINES -->
+        <div id="helplinesSec" class="content-section hidden">
+            <div class="card">
+                <h3>Immediate Crisis Helplines</h3>
+                <ul style="line-height: 2.2; font-size: 15px;">
+                    <li><strong>Tele-MANAS:</strong> <a href="tel:14416">14416</a> or <a href="tel:18008914416">1800-891-4416</a></li>
+                    <li><strong>Vandrevala Foundation:</strong> <a href="tel:+919999666555">+91 9999 666 555</a></li>
+                    <li><strong>KIRAN Helpline:</strong> <a href="tel:18005990019">1800-599-0019</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 9. EMERGENCY SOS -->
+        <div id="sosSec" class="content-section hidden">
+            <div class="card" style="border-left: 6px solid var(--danger);">
+                <h3 style="color: var(--danger);">Emergency SOS Alert</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                    💡 <em>Hands-free emergency shortcut active:</em> Shake your phone rapidly or press the <strong>Esc</strong> key 3 times quickly to trigger SOS instantly.
+                </p>
+                <label>Current Location / Campus Building:</label>
+                <input type="text" id="sosLocation" placeholder="Hostel Block B / Campus Grounds">
+                <button class="sos-btn" onclick="dispatchSos()">TRIGGER EMERGENCY SOS</button>
+                <div id="sosStatus" style="margin-top: 15px; font-weight: bold;"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const BASE_URL = "http://localhost:8080/api/v1";
+    let currentUser = JSON.parse(localStorage.getItem('student_user')) || null;
+    let moodChartInstance = null;
+    let predictiveChartInst = null;
+    let breathingInterval = null;
+    let isBreathingActive = false;
+    let currentGeoLocation = "Hostel Block B / Campus Grounds";
+    let studentChatPollInterval = null;
+    let counselorChatPollInterval = null;
+
+    function getAuthHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': currentUser && currentUser.token ? `Bearer ${currentUser.token}` : ''
+        };
+    }
+
+    function initLocationTracking() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    currentGeoLocation = `Lat: ${pos.coords.latitude.toFixed(5)}, Lon: ${pos.coords.longitude.toFixed(5)}`;
+                    const locInput = document.getElementById('sosLocation');
+                    if (locInput && !locInput.value) locInput.value = currentGeoLocation;
+                },
+                (err) => { console.warn("GPS access denied."); },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    }
+
+    let escPressCount = 0;
+    let escTimer = null;
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            escPressCount++;
+            if (escPressCount === 1) {
+                escTimer = setTimeout(() => { escPressCount = 0; }, 1500);
+            }
+            if (escPressCount === 3) {
+                clearTimeout(escTimer);
+                escPressCount = 0;
+                dispatchSosViaTrigger("Keyboard Panic Shortcut (Triple Esc)");
+            }
+        }
+    });
+
+    async function dispatchSosViaTrigger(triggerSource) {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const inputLoc = document.getElementById('sosLocation') ? document.getElementById('sosLocation').value : "";
+        const locationToDispatch = (inputLoc && inputLoc.trim() !== "") ? inputLoc : currentGeoLocation;
+
+        try {
+            await fetch(`${BASE_URL}/sos/trigger?studentId=${studentId}&location=${encodeURIComponent(locationToDispatch)}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ studentId, triggerType: triggerSource, locationData: locationToDispatch })
+            });
+            alert(`🚨 EMERGENCY SOS DISPATCHED!\nSource: ${triggerSource}`);
+        } catch (err) {
+            alert("🚨 EMERGENCY SOS: Crisis mode activated. Please call Tele-MANAS at 14416 immediately.");
+        }
+    }
+
+    let webcamStream = null;
+    let modelsLoaded = false;
+
+    async function loadFaceApiModels() {
+        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+        const statusDiv = document.getElementById('scanStatus');
+        try {
+            statusDiv.innerText = "Loading AI models...";
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+            modelsLoaded = true;
+            statusDiv.innerText = "AI Models Ready. Starting Camera...";
+        } catch (e) {
+            statusDiv.innerText = "Failed to load face detection models.";
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('mindspace_theme', isDark ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('mindspace_theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    });
+
+    async function initAutoMoodDetection() {
+        const video = document.getElementById('faceWebcam');
+        const statusDiv = document.getElementById('scanStatus');
+        if (!modelsLoaded) await loadFaceApiModels();
+
+        try {
+            if (!webcamStream) {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = webcamStream;
+            }
+            statusDiv.innerText = "Scanning facial expression...";
+            video.onloadedmetadata = () => { setTimeout(runAutoDetection, 1200); };
+            if (video.readyState >= 3) setTimeout(runAutoDetection, 1200);
+        } catch (err) {
+            statusDiv.innerText = "Webcam access denied. Select mood manually.";
+        }
+    }
+
+    async function runAutoDetection() {
+        const video = document.getElementById('faceWebcam');
+        const statusDiv = document.getElementById('scanStatus');
+        if (!video || !modelsLoaded || video.paused || video.ended) return;
+
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+        if (!detection) {
+            statusDiv.innerText = "No face detected. Retrying...";
+            setTimeout(runAutoDetection, 1500);
+            return;
+        }
+
+        let dominant = 'neutral';
+        let maxProbability = 0;
+        for (const [expr, prob] of Object.entries(detection.expressions)) {
+            if (prob > maxProbability) { maxProbability = prob; dominant = expr; }
+        }
+
+        mapExpressionToMood(dominant, maxProbability);
+        statusDiv.innerText = `Auto-Detected: ${dominant.toUpperCase()} (${Math.round(maxProbability * 100)}%)`;
+        stopMoodCamera();
+        await autoSaveDetectedMood(dominant, maxProbability);
+    }
+
+    function stopMoodCamera() {
+        const video = document.getElementById('faceWebcam');
+        if (video) { video.pause(); video.srcObject = null; }
+        if (webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); webcamStream = null; }
+    }
+
+    function mapExpressionToMood(expression, probability) {
+        const moodSelect = document.getElementById('moodSelect');
+        const intensityInput = document.getElementById('intensityScore');
+        let calculatedIntensity = Math.min(10, Math.max(1, Math.round(probability * 10)));
+
+        switch (expression) {
+            case 'happy': moodSelect.value = 'HAPPY'; break;
+            case 'sad': moodSelect.value = 'SAD'; break;
+            case 'fearful': moodSelect.value = 'ANXIOUS'; break;
+            case 'angry':
+            case 'disgusted': moodSelect.value = 'STRESSED'; break;
+            default: moodSelect.value = 'CALM'; break;
+        }
+        intensityInput.value = calculatedIntensity;
+        document.getElementById('moodNote').value = `Auto-detected via AI camera scan (${expression.toUpperCase()})`;
+    }
+
+    async function autoSaveDetectedMood(expression, probability) {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const mood = document.getElementById('moodSelect').value;
+        const intensityScore = parseInt(document.getElementById('intensityScore').value);
+        const note = document.getElementById('moodNote').value;
+
+        try {
+            await fetch(`${BASE_URL}/moods/log?studentId=${studentId}`, {
+                method: 'POST', headers: getAuthHeaders(),
+                body: JSON.stringify({ mood, intensityScore, note })
+            });
+            loadMoodAnalytics();
+        } catch (e) {}
+    }
+
+    async function manualSaveMood() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const mood = document.getElementById('moodSelect').value;
+        const intensityScore = parseInt(document.getElementById('intensityScore').value);
+        const note = document.getElementById('moodNote').value || "Manual Check-in";
+
+        const res = await fetch(`${BASE_URL}/moods/log?studentId=${studentId}`, {
+            method: 'POST', headers: getAuthHeaders(),
+            body: JSON.stringify({ mood, intensityScore, note })
+        });
+        if (res.ok) {
+            document.getElementById('autoSaveStatus').innerText = "✓ Mood Log Saved Successfully!";
+            loadMoodAnalytics();
+        }
+    }
+
+    /* ============================================================
+     * ADVANCED PREDICTIVE AI & BIOMETRICS ENGINE
+     * ============================================================ */
+    function syncWearableData() {
+        const mockRhr = Math.floor(Math.random() * (85 - 62) + 62);
+        const mockHrv = Math.floor(Math.random() * (75 - 45) + 45);
+        const mockSleep = (Math.random() * (8.5 - 5.0) + 5.0).toFixed(1);
+        const mockSteps = Math.floor(Math.random() * (11000 - 3500) + 3500).toLocaleString();
+
+        document.getElementById('bioRhr').innerText = `${mockRhr} bpm`;
+        document.getElementById('bioHrv').innerText = `${mockHrv} ms`;
+        document.getElementById('bioSleep').innerText = `${mockSleep} hrs`;
+        document.getElementById('bioSteps').innerText = mockSteps;
+
+        if (mockRhr > 78 || mockSleep < 6.0) {
+            alert("⚠️ JARVIS Telemetry Alert: Elevated resting heart rate or low sleep cycle detected. Launching a 3-minute guided breathing session is recommended.");
+        } else {
+            alert("✓ Wearable telemetry synchronized successfully. Vital metrics stable.");
+        }
+    }
+
+    async function runCbtReframing() {
+        const input = document.getElementById('cbtInputText').value.trim();
+        const output = document.getElementById('cbtOutputBox');
+
+        if (!input) { alert("Please enter a negative thought or stressor."); return; }
+        output.innerText = "[JARVIS Analysis]: Evaluating cognitive distortions...";
+
+        setTimeout(() => {
+            let distortion = "All-or-Nothing Thinking / Catastrophizing";
+            let reframe = "One difficult event does not dictate your overall capability or future outcome. What is one actionable step you can take right now?";
+            
+            if (input.toLowerCase().includes("always") || input.toLowerCase().includes("never")) {
+                distortion = "Overgeneralization";
+                reframe = "Notice the use of absolute terms. Try to look for specific instances where circumstances were different.";
+            }
+
+            output.innerText = `=== COGNITIVE RESTRUCTURING REPORT ===\n\n` +
+                `🔍 Identified Distortion: ${distortion}\n` +
+                `💡 Constructive Reframe: ${reframe}`;
+            
+            speakAsJarvis("I have analyzed your thought pattern. Review the structured reframe on your screen.");
+        }, 1200);
+    }
+
+    function initPredictiveMoodChart() {
+        const ctx = document.getElementById('predictiveMoodChart');
+        if (!ctx) return;
+
+        if (predictiveChartInst) predictiveChartInst.destroy();
+
+        const labels = ['Day -7', 'Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Yesterday', 'Today (Actual)', 'Day +1 (Est)', 'Day +2 (Est)', 'Day +3 (Est)', 'Day +4 (Est)', 'Day +5 (Est)', 'Day +7 (Est)'];
+        const dataPoints = [6, 7, 5, 4, 6, 7, 6, 7, 7, 8, 8, 7, 8, 9];
+
+        predictiveChartInst = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Mood Stability Index (Historical & ML Forecast)',
+                    data: dataPoints,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { min: 1, max: 10, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
+            }
+        });
+    }
+
+    /* ============================================================
+     * STUDENT DIRECT CHAT & VIDEO CALLS (DOCTOR & COUNSELOR)
+     * ============================================================ */
+    async function loadStudentDoctorChat() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const chatBox = document.getElementById('doctorDirectChatBox');
+        if (!chatBox) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            if (res.ok) {
+                const messages = await res.json();
+                if (!messages || messages.length === 0) {
+                    chatBox.innerHTML = `<div class="chat-msg ai" style="align-self: center;">No messages yet with Dr. Deshmukh. Start the conversation below.</div>`;
+                    return;
+                }
+                const newHtml = messages.map(m => {
+                    const isStudent = m.sender === 'STUDENT' || m.sender === 'USER';
+                    const msgClass = isStudent ? 'user' : 'doctor';
+                    const senderLabel = isStudent ? 'You: ' : 'Dr. Deshmukh: ';
+                    return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
+                }).join('');
+
+                if (chatBox.innerHTML !== newHtml) {
+                    chatBox.innerHTML = newHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+        } catch (err) {}
+    }
+
+    async function loadStudentCounselorChat() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const chatBox = document.getElementById('counselorDirectChatBox');
+        if (!chatBox) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            if (res.ok) {
+                const messages = await res.json();
+                if (!messages || messages.length === 0) {
+                    chatBox.innerHTML = `<div class="chat-msg ai" style="align-self: center;">No messages yet with your counselor. Start the conversation below.</div>`;
+                    return;
+                }
+                const newHtml = messages.map(m => {
+                    const isStudent = m.sender === 'STUDENT' || m.sender === 'USER';
+                    const msgClass = isStudent ? 'user' : 'counselor';
+                    const senderLabel = isStudent ? 'You: ' : 'Counselor: ';
+                    return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
+                }).join('');
+
+                if (chatBox.innerHTML !== newHtml) {
+                    chatBox.innerHTML = newHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+        } catch (err) {}
+    }
+
+    function startStudentChatPolling() {
+        if (studentChatPollInterval) clearInterval(studentChatPollInterval);
+        studentChatPollInterval = setInterval(() => {
+            const activeDocSec = document.getElementById('doctorChatSec');
+            const activeCounselorSec = document.getElementById('counselorChatSec');
+            if (activeDocSec && !activeDocSec.classList.contains('hidden')) loadStudentDoctorChat();
+            if (activeCounselorSec && !activeCounselorSec.classList.contains('hidden')) loadStudentCounselorChat();
+        }, 3000);
+    }
+
+    async function sendStudentMessageToDoctor() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const input = document.getElementById('studentDoctorChatInput');
+        const text = input.value.trim();
+        const chatBox = document.getElementById('doctorDirectChatBox');
+        if (!text) return;
+
+        chatBox.innerHTML += `<div class="chat-msg user"><strong>You: </strong>${text}</div>`;
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            await fetch(`${BASE_URL}/chat/student-to-doctor?studentId=${studentId}`, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text
+            });
+            loadStudentDoctorChat();
+        } catch (err) {}
+    }
+
+    async function sendStudentMessageToCounselor() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const input = document.getElementById('studentCounselorChatInput');
+        const text = input.value.trim();
+        const chatBox = document.getElementById('counselorDirectChatBox');
+        if (!text) return;
+
+        chatBox.innerHTML += `<div class="chat-msg user"><strong>You: </strong>${text}</div>`;
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            await fetch(`${BASE_URL}/chat/student-to-doctor?studentId=${studentId}`, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text
+            });
+            loadStudentCounselorChat();
+        } catch (err) {}
+    }
+
+    async function joinDoctorVideoCall() {
+        const videoModal = document.getElementById('studentVideoModal');
+        const videoElement = document.getElementById('studentWebcamVideo');
+        videoModal.classList.remove('hidden');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoElement.srcObject = stream;
+        } catch (err) { alert("Camera access denied or unavailable."); }
+    }
+
+    function leaveStudentVideoCall() {
+        const videoElement = document.getElementById('studentWebcamVideo');
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(t => t.stop());
+            videoElement.srcObject = null;
+        }
+        document.getElementById('studentVideoModal').classList.add('hidden');
+    }
+
+    async function joinCounselorVideoCall() {
+        const videoModal = document.getElementById('counselorVideoModal');
+        const videoElement = document.getElementById('counselorWebcamVideo');
+        videoModal.classList.remove('hidden');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoElement.srcObject = stream;
+        } catch (err) { alert("Camera access denied or unavailable."); }
+    }
+
+    function leaveCounselorVideoCall() {
+        const videoElement = document.getElementById('counselorWebcamVideo');
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(t => t.stop());
+            videoElement.srcObject = null;
+        }
+        document.getElementById('counselorVideoModal').classList.add('hidden');
+    }
+
+    let poppedCount = 0;
+    function initBubbleGame() {
+        const container = document.getElementById('bubbleGameContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        poppedCount = 0;
+        updateBubbleScore();
+
+        for (let i = 0; i < 24; i++) {
+            const bubble = document.createElement('div');
+            bubble.style.cssText = `
+                width: 40px; height: 40px; border-radius: 50%;
+                background: radial-gradient(circle at 30% 30%, #ffffff, #bae6fd);
+                border: 2px solid #7dd3fc; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
+                transition: transform 0.1s ease, background 0.2s ease;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 2px 4px rgba(255,255,255,0.9);
+            `;
+            bubble.onclick = () => {
+                if (!bubble.classList.contains('popped')) {
+                    bubble.classList.add('popped');
+                    bubble.style.background = '#e2e8f0';
+                    bubble.style.borderColor = '#cbd5e1';
+                    bubble.style.transform = 'scale(0.82)';
+                    poppedCount++;
+                    updateBubbleScore();
+                    playPopSound();
+                }
+            };
+            container.appendChild(bubble);
+        }
+    }
+
+    function updateBubbleScore() {
+        const scoreEl = document.getElementById('bubbleScoreText');
+        if (scoreEl) scoreEl.innerText = `Popped: ${poppedCount} bubbles`;
+    }
+
+    function resetBubbleGame() { initBubbleGame(); }
+
+    function playPopSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        } catch (e) {}
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isVoiceActive = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.onresult = (event) => {
+            document.getElementById('chatInput').value = event.results[0][0].transcript;
+            sendAiMessage();
+        };
+        recognition.onend = () => { stopVoiceUI(); };
+    }
+
+    function toggleVoiceMode() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (!recognition) { alert("Speech recognition not supported."); return; }
+        if (!isVoiceActive) {
+            recognition.start(); isVoiceActive = true;
+            document.getElementById('voiceToggleBtn').classList.add('listening');
+            document.getElementById('voiceBtnLabel').innerText = "Listening...";
+        } else {
+            recognition.stop(); stopVoiceUI();
+        }
+    }
+
+    function stopVoiceUI() {
+        isVoiceActive = false;
+        const btn = document.getElementById('voiceToggleBtn');
+        if (btn) {
+            btn.classList.remove('listening');
+            document.getElementById('voiceBtnLabel').innerText = "Talk with JARVIS";
+        }
+    }
+
+    function speakAsJarvis(text) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, '').replace(/[*•#]/g, ''));
+        utterance.rate = 0.95; utterance.pitch = 0.90;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    window.onload = () => {
+        initLocationTracking();
+        initBubbleGame();
+        startStudentChatPolling();
+        if (currentUser) { initDashboard(); }
+    };
+
+    function switchTab(tab) {
+        document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+        document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value, role: "ROLE_STUDENT" })
+            });
+            const data = await res.json();
+            if (res.ok) { currentUser = data; localStorage.setItem('student_user', JSON.stringify(currentUser)); initDashboard(); }
+            else { document.getElementById('authStatus').innerText = data.message || "Invalid credentials."; }
+        } catch (err) { document.getElementById('authStatus').innerText = "Server connection error."; }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('regName').value, email: document.getElementById('regEmail').value,
+            phoneNumber: document.getElementById('regPhone').value, password: document.getElementById('regPassword').value,
+            role: "ROLE_STUDENT", guardianName: document.getElementById('regGuardianName').value,
+            guardianPhone: document.getElementById('regGuardianPhone').value, guardianEmail: document.getElementById('regGuardianEmail').value
+        };
+        try {
+            const res = await fetch(`${BASE_URL}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (res.ok) { alert("Registered successfully! Please sign in."); switchTab('login'); }
+            else { document.getElementById('authStatus').innerText = "Registration failed."; }
+        } catch (err) { document.getElementById('authStatus').innerText = "Server error."; }
+    }
+
+    function initDashboard() {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('dashboardSection').style.display = 'grid';
+        document.getElementById('userGreeting').innerText = `Welcome, ${currentUser.name || 'Student'}`;
+        loadMoodAnalytics();
+    }
+
+    function handleLogout() { localStorage.removeItem('student_user'); window.location.reload(); }
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(sectionId).classList.remove('hidden');
+
+        if (sectionId !== 'moodSec') stopMoodCamera();
+        if (sectionId === 'moodSec') { loadMoodAnalytics(); initAutoMoodDetection(); }
+        if (sectionId === 'doctorChatSec') loadStudentDoctorChat();
+        if (sectionId === 'counselorChatSec') loadStudentCounselorChat();
+        if (sectionId === 'predictiveAiSec') initPredictiveMoodChart();
+        if (sectionId === 'gratitudeSec') { loadGratitudeHistory(); initBubbleGame(); }
+        if (sectionId === 'counselorSec') loadStudentAppointments();
+    }
+
+    async function sendAiMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML += `<div class="chat-msg user">${text}</div>`;
+        input.value = ''; chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+            const res = await fetch(`${BASE_URL}/chat/send?studentId=${studentId}&location=${encodeURIComponent(currentGeoLocation)}`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text });
+            const reply = await res.text();
+            chatBox.innerHTML += `<div class="chat-msg ${reply.includes('CRITICAL') ? 'alert' : 'ai'}">${reply}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            speakAsJarvis(reply);
+        } catch (err) {}
+    }
+
+    async function loadMoodAnalytics() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const res = await fetch(`${BASE_URL}/moods/student/${studentId}`, { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const moodLogs = await res.json();
+        const labels = moodLogs.map((m, idx) => `Entry ${idx + 1}`);
+        const scores = moodLogs.map(m => m.intensityScore);
+
+        const ctx = document.getElementById('moodChart').getContext('2d');
+        if (moodChartInstance) moodChartInstance.destroy();
+        moodChartInstance = new Chart(ctx, {
+            type: 'line', data: { labels: labels, datasets: [{ label: 'Mood Intensity', data: scores, borderColor: '#4a90e2', fill: true }] },
+            options: { scales: { y: { min: 1, max: 10 } } }
+        });
+    }
+
+    async function saveGratitude() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        await fetch(`${BASE_URL}/gratitude/save?studentId=${studentId}`, {
+            method: 'POST', headers: getAuthHeaders(),
+            body: JSON.stringify({ noteOne: document.getElementById('grat1').value, noteTwo: document.getElementById('grat2').value, noteThree: document.getElementById('grat3').value })
+        });
+        alert("Gratitude saved!"); loadGratitudeHistory();
+    }
+
+    async function loadGratitudeHistory() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const res = await fetch(`${BASE_URL}/gratitude/student/${studentId}`, { headers: getAuthHeaders() });
+        const entries = await res.json();
+        document.getElementById('gratitudeHistory').innerHTML = entries.map(e => `
+            <div style="margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                <small style="color:#888;">${new Date(e.createdAt).toLocaleDateString()}</small><br>
+                1. ${e.noteOne || ''}<br>2. ${e.noteTwo || ''}<br>3. ${e.noteThree || ''}
+            </div>
+        `).join('') || "No gratitude notes logged yet.";
+    }
+
+    async function submitScreening(type) {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const score = parseInt(document.getElementById('phqScore').value);
+        const res = await fetch(`${BASE_URL}/screening/submit?studentId=${studentId}`, {
+            method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ testType: type, totalScore: score })
+        });
+        const data = await res.json();
+        document.getElementById('screeningResult').innerText = `Result: ${data.severity} Risk (Score: ${data.totalScore})`;
+    }
+
+    function toggleBreathing() {
+        const circle = document.getElementById('breathCircle');
+        const instruction = document.getElementById('breathInstruction');
+        const btn = document.getElementById('breathBtn');
+
+        if (isBreathingActive) {
+            clearInterval(breathingInterval); isBreathingActive = false;
+            circle.style.transform = "scale(1)"; instruction.innerText = "Session stopped."; btn.innerText = "Start Session"; return;
+        }
+        isBreathingActive = true; btn.innerText = "Stop Session";
+        let phase = 0;
+        const phases = [{ text: "Inhale slowly...", scale: "scale(1.5)" }, { text: "Hold breath...", scale: "scale(1.5)" }, { text: "Exhale gently...", scale: "scale(1)" }, { text: "Hold breath...", scale: "scale(1)" }];
+        breathingInterval = setInterval(() => { const p = phases[phase % 4]; instruction.innerText = p.text; circle.style.transform = p.scale; phase++; }, 4000);
+    }
+
+    async function bookCounselor() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const counselorId = parseInt(document.getElementById('counselorSelect').value);
+        const rawTime = document.getElementById('appointmentTime').value;
+        const appointmentTime = rawTime.length === 16 ? rawTime + ":00" : rawTime;
+        const notes = document.getElementById('bookingNotes').value;
+
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/book?studentId=${studentId}&counselorId=${counselorId}`, {
+                method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ appointmentTime, notes })
+            });
+            if (res.ok) {
+                document.getElementById('bookingStatus').innerText = "✓ Appointment Requested Successfully!";
+                loadStudentAppointments();
+            }
+        } catch (err) {}
+    }
+
+    async function loadStudentAppointments() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const container = document.getElementById('studentAppointmentsList');
+        if (!container) return;
+        try {
+            const res = await fetch(`${BASE_URL}/counselors/appointments/student/${studentId}`, { headers: getAuthHeaders() });
+            const appointments = await res.json();
+            container.innerHTML = appointments.map(app => `
+                <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Counselor ID: #${app.counselorId}</strong><br><small>Scheduled: ${new Date(app.appointmentTime).toLocaleString()}</small></div>
+                    <span class="badge ${app.status === 'CONFIRMED' ? 'badge-active' : 'badge-pending'}">${app.status || 'REQUESTED'}</span>
+                </div>
+            `).join('') || "No appointments found.";
+        } catch (err) {}
+    }
+
+    async function dispatchSos() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const inputLoc = document.getElementById('sosLocation').value;
+        await fetch(`${BASE_URL}/sos/trigger?studentId=${studentId}&location=${encodeURIComponent(inputLoc || currentGeoLocation)}`, { method: 'POST', headers: getAuthHeaders() });
+        document.getElementById('sosStatus').innerText = "ALERT DISPATCHED!";
+        document.getElementById('sosStatus').style.color = "red";
+    }
+</script>
+</body>
+</html>
