@@ -214,6 +214,23 @@
 </head>
 <body>
 
+<!-- DOCTOR SECURE LOGIN MODAL -->
+<div id="doctorLoginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); display: flex; justify-content: center; align-items: center; z-index: 99999;">
+    <div style="background: var(--card-bg); color: var(--text-main); padding: 36px; border-radius: 12px; width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); border: 1px solid var(--border-color);">
+        <h2 style="margin-bottom: 8px; text-align: center; color: var(--accent-teal);">🩺 MindSpace Doctor Portal Login</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; text-align: center;">Authorized Medical Psychiatrist Access Only</p>
+        
+        <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Doctor Email:</label>
+        <input type="email" id="docLoginEmail" placeholder="e.g., doctor@campus.edu" style="width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+        
+        <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Password:</label>
+        <input type="password" id="docLoginPassword" placeholder="Enter secure password" style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+        
+        <button onclick="handleDoctorLogin()" style="width: 100%; background: var(--accent-teal); color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Secure Doctor Login</button>
+        <div id="docLoginError" style="color: var(--danger); font-size: 12px; margin-top: 12px; text-align: center;"></div>
+    </div>
+</div>
+
 <!-- FLOATING REAL-TIME TOAST CONTAINER -->
 <div id="sosToastContainer"></div>
 
@@ -222,7 +239,7 @@
     <h1>🩺 MindSpace Doctor & Psychiatrist Console</h1>
     <div class="user-badge">
         <span>Practitioner:</span>
-        <strong>Dr. Sameer Deshmukh, M.D. (Psychiatry)</strong>
+        <strong id="loggedInDoctorName">Dr. Sameer Deshmukh, M.D. (Psychiatry)</strong>
         <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
         <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
     </div>
@@ -314,13 +331,6 @@
                                 <td><span class="badge badge-critical">MODERATE / SEVERE</span></td>
                                 <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(101, 'Aadi Sharma')">Inspect Record</button></td>
                             </tr>
-                            <tr>
-                                <td>#105 - Rohan Verma</td>
-                                <td>Dr. Rajesh Kumar</td>
-                                <td>F32.1 - Major Depressive Disorder</td>
-                                <td><span class="badge badge-pending">MODERATE</span></td>
-                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(105, 'Rohan Verma')">Inspect Record</button></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -386,7 +396,6 @@
                 </div>
 
                 <div class="grid-2" style="grid-template-columns: 320px 1fr; gap: 20px;">
-                    <!-- Student Selection Sidebar -->
                     <div style="border-right: 1px solid var(--border-color); padding-right: 16px;">
                         <label>Select Student Patient:</label>
                         <select id="chatStudentSelect" onchange="loadStudentChatHistory()" style="margin-bottom: 16px;">
@@ -400,7 +409,6 @@
                         </div>
                     </div>
 
-                    <!-- Live Chat Box Interface -->
                     <div style="display: flex; flex-direction: column; height: 420px;">
                         <div id="doctorChatBox" style="flex: 1; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; overflow-y: auto; background: rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
                             <div class="chat-msg ai" style="align-self: center; font-size: 12px; color: var(--text-muted);">Select a student from the dropdown to view secure messages.</div>
@@ -452,7 +460,6 @@
                     <button class="btn btn-secondary" onclick="toggleRxPreview()">Toggle Printable Preview</button>
                 </div>
 
-                <!-- Live Printable Preview Sheet -->
                 <div id="rxPreviewSheet" class="rx-preview-paper hidden">
                     <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px;">
                         <div>
@@ -460,7 +467,7 @@
                             <p style="margin:0; font-size: 13px;">Campus Psychiatric & Mental Health Services</p>
                         </div>
                         <div style="text-align: right;">
-                            <strong>Dr. Sameer Deshmukh, M.D.</strong><br>
+                            <strong id="rxPreviewDoctorName">Dr. Sameer Deshmukh, M.D.</strong><br>
                             Reg. No: PMC-882910<br>
                             Date: <span id="rxPreviewDate">--/--/----</span>
                         </div>
@@ -564,7 +571,7 @@
                     <div style="background: #0f172a; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; color: white;">
                         <div style="position: relative; width: 100%; height: 260px; background: #000; border-radius: 6px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
                             <video id="doctorWebcamVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
-                            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 4px 8px; font-size: 11px; border-radius: 4px;">Dr. Sameer Deshmukh (Host)</div>
+                            <div id="videoHostNameLabel" style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 4px 8px; font-size: 11px; border-radius: 4px;">Dr. Sameer Deshmukh (Host)</div>
                         </div>
                         <button class="btn btn-success" style="margin-top: 12px; width: 100%;" onclick="startDoctorWebcam()">Launch Live Video Stream</button>
                     </div>
@@ -631,6 +638,7 @@
     let timerInterval = null;
     let sessionSeconds = 0;
     let doctorChatPollInterval = null;
+    let loggedInDoctor = null;
 
     let knownSosIds = new Set();
     let isInitialSosPoll = true;
@@ -646,12 +654,50 @@
     window.onload = () => {
         startClock();
         initCharts();
-        startSosMonitoring();
-        startChatPolling();
-        fetchStudentNameById();
-        loadAllStudentsDirectory();
-        loadStudentContactDropdown();
     };
+
+    /* SECURE DOCTOR LOGIN HANDLER */
+    async function handleDoctorLogin() {
+        const email = document.getElementById('docLoginEmail').value.trim();
+        const password = document.getElementById('docLoginPassword').value.trim();
+        const errorEl = document.getElementById('docLoginError');
+
+        if (!email || !password) {
+            errorEl.innerText = "Please provide both doctor email and password.";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${BASE_URL}/doctors/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (res.ok) {
+                loggedInDoctor = await res.json();
+                
+                // Hide login modal
+                document.getElementById('doctorLoginModal').style.display = 'none';
+                
+                // Update header badge and prescription templates with logged-in doctor name
+                document.getElementById('loggedInDoctorName').innerText = `${loggedInDoctor.name}, M.D.`;
+                document.getElementById('rxPreviewDoctorName').innerText = `${loggedInDoctor.name}, M.D.`;
+                document.getElementById('videoHostNameLabel').innerText = `${loggedInDoctor.name} (Host)`;
+
+                // Initialize dashboard engine
+                startSosMonitoring();
+                startChatPolling();
+                fetchStudentNameById();
+                loadAllStudentsDirectory();
+                loadStudentContactDropdown();
+            } else {
+                errorEl.innerText = "Access Denied: Invalid doctor credentials.";
+            }
+        } catch (err) {
+            errorEl.innerText = "Server error during doctor authentication.";
+        }
+    }
 
     function startClock() {
         setInterval(() => {
@@ -707,7 +753,6 @@
         });
     }
 
-    /* Automatically Fetch Student Name by ID */
     async function fetchStudentNameById() {
         const studentId = document.getElementById('rxPatientId').value;
         const nameInput = document.getElementById('rxPatientName');
@@ -723,12 +768,10 @@
                 nameInput.value = "Student ID Not Found";
             }
         } catch (err) {
-            console.error("Failed to auto-fetch student name:", err);
             nameInput.value = "Connection Error";
         }
     }
 
-    /* Load All Students Directory */
     async function loadAllStudentsDirectory() {
         const tbody = document.getElementById('allStudentsTableBody');
         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Syncing student records from database...</td></tr>`;
@@ -793,7 +836,6 @@
     function selectStudentForRx(studentId, studentName) {
         const rxTabBtn = document.querySelector("button[onclick*='rxTab']");
         switchTab('rxTab', rxTabBtn);
-        
         document.getElementById('rxPatientId').value = studentId;
         document.getElementById('rxPatientName').value = studentName;
     }
@@ -805,7 +847,6 @@
         loadStudentChatHistory();
     }
 
-    /* Secure Chat & Video Hub Logic with Real-Time Polling */
     async function loadStudentContactDropdown() {
         const select = document.getElementById('chatStudentSelect');
         try {
@@ -818,9 +859,7 @@
             }
             const students = await res.json();
             populateDropdown(students);
-        } catch (err) {
-            console.error("Failed to load students for chat selector:", err);
-        }
+        } catch (err) {}
     }
 
     function populateDropdown(students) {
@@ -847,9 +886,10 @@
                     chatBox.innerHTML = `<div class="chat-msg ai" style="align-self: center;">No chat messages recorded yet with this student.</div>`;
                     return;
                 }
+                const docName = loggedInDoctor ? loggedInDoctor.name : "Dr. Deshmukh";
                 const newHtml = messages.map(m => {
                     const msgClass = m.sender === 'DOCTOR' ? 'user' : 'doctor';
-                    const senderLabel = m.sender === 'DOCTOR' ? 'Dr. Deshmukh: ' : 'Student: ';
+                    const senderLabel = m.sender === 'DOCTOR' ? `${docName}: ` : 'Student: ';
                     return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
                 }).join('');
 
@@ -858,9 +898,7 @@
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             }
-        } catch (e) {
-            console.error("Failed to load chat history:", e);
-        }
+        } catch (e) {}
     }
 
     function startChatPolling() {
@@ -869,9 +907,7 @@
             const chatSec = document.getElementById('secureChatTab');
             if (chatSec && !chatSec.classList.contains('hidden')) {
                 const studentId = document.getElementById('chatStudentSelect').value;
-                if (studentId) {
-                    loadStudentChatHistory();
-                }
+                if (studentId) loadStudentChatHistory();
             }
         }, 3000);
     }
@@ -882,13 +918,11 @@
         const text = input.value.trim();
         const chatBox = document.getElementById('doctorChatBox');
 
-        if (!studentId) {
-            alert("Please select a student from the dropdown first.");
-            return;
-        }
+        if (!studentId) { alert("Please select a student from the dropdown first."); return; }
         if (!text) return;
 
-        chatBox.innerHTML += `<div class="chat-msg user"><strong>Dr. Deshmukh: </strong>${text}</div>`;
+        const docName = loggedInDoctor ? loggedInDoctor.name : "Dr. Deshmukh";
+        chatBox.innerHTML += `<div class="chat-msg user"><strong>${docName}: </strong>${text}</div>`;
         input.value = '';
         chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -899,9 +933,7 @@
                 body: text
             });
             loadStudentChatHistory();
-        } catch (err) {
-            console.error("Failed to transmit secure message:", err);
-        }
+        } catch (err) {}
     }
 
     async function startDoctorWebcam() {
@@ -911,16 +943,13 @@
             videoElement.srcObject = stream;
             startTeleConsultation();
         } catch (err) {
-            alert("Unable to access camera and microphone. Please check browser permissions.");
+            alert("Unable to access camera and microphone.");
         }
     }
 
     function startDoctorVideoCall() {
         const studentId = document.getElementById('chatStudentSelect').value;
-        if (!studentId) {
-            alert("Please select a student patient to call.");
-            return;
-        }
+        if (!studentId) { alert("Please select a student patient to call."); return; }
         const telehealthBtn = document.querySelector("button[onclick*='telehealthTab']");
         switchTab('telehealthTab', telehealthBtn);
         startDoctorWebcam();
@@ -928,14 +957,10 @@
 
     function flagStudentCase() {
         const studentId = document.getElementById('chatStudentSelect').value;
-        if (!studentId) {
-            alert("Please select a student first.");
-            return;
-        }
+        if (!studentId) { alert("Please select a student first."); return; }
         alert(`⚠️ Student #${studentId} case has been escalated and flagged for urgent psychiatric review.`);
     }
 
-    /* Helper: Parse raw location to produce clean Google Maps URL */
     function formatMapsUrl(rawLocation) {
         if (!rawLocation) return null;
         const coordsMatch = rawLocation.match(/[-+]?\d*\.\d+|[-+]?\d+/g);
@@ -945,9 +970,6 @@
         return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawLocation)}`;
     }
 
-    /* ============================================================
-     * REAL-TIME SOS ALERT MONITOR & FLOATING TOAST ENGINE
-     * ============================================================ */
     function startSosMonitoring() {
         pollSosFeed();
         setInterval(pollSosFeed, 3000);
@@ -967,15 +989,11 @@
             alerts.forEach(alert => {
                 if (!knownSosIds.has(alert.id)) {
                     knownSosIds.add(alert.id);
-                    if (!isInitialSosPoll) {
-                        triggerSosToast(alert);
-                    }
+                    if (!isInitialSosPoll) triggerSosToast(alert);
                 }
             });
 
-            if (isInitialSosPoll) {
-                isInitialSosPoll = false;
-            }
+            if (isInitialSosPoll) isInitialSosPoll = false;
 
             if (!alerts || alerts.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No emergency alerts recorded.</td></tr>`;
@@ -1001,9 +1019,7 @@
             }).join('');
 
             consoleEl.innerText = `[SOS Command Stream]\n` + JSON.stringify(alerts, null, 2);
-        } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger); text-align: center;">[Error]: ${err.message}</td></tr>`;
-        }
+        } catch (err) {}
     }
 
     function triggerSosToast(alertData) {
@@ -1031,14 +1047,8 @@
                 <strong>Location:</strong> ${locationDisplay}
             </div>
             <div class="sos-toast-actions">
-                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background: rgba(255,255,255,0.2); color: white;" 
-                        onclick="dismissToast('toast-sos-${alertData.id}')">
-                    Dismiss
-                </button>
-                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" 
-                        onclick="viewSosDetails(${alertData.id})">
-                    View Incident
-                </button>
+                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background: rgba(255,255,255,0.2); color: white;" onclick="dismissToast('toast-sos-${alertData.id}')">Dismiss</button>
+                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="viewSosDetails(${alertData.id})">View Incident</button>
             </div>
         `;
 
@@ -1108,7 +1118,7 @@
             const res = await fetch(`${BASE_URL}/moods/student/${id}`);
             const data = await res.json();
             consoleEl.innerText = `[Mood Logs - Patient #${id}]\n` + JSON.stringify(data, null, 2);
-        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch mood logs.`; }
+        } catch (e) {}
     }
 
     async function fetchPatientScreenings() {
@@ -1118,7 +1128,7 @@
             const res = await fetch(`${BASE_URL}/screening/student/${id}`);
             const data = await res.json();
             consoleEl.innerText = `[Clinical Screenings - Patient #${id}]\n` + JSON.stringify(data, null, 2);
-        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch screenings.`; }
+        } catch (e) {}
     }
 
     async function fetchEmergencyContacts() {
@@ -1128,7 +1138,7 @@
             const res = await fetch(`${BASE_URL}/contacts/student/${id}`);
             const data = await res.json();
             consoleEl.innerText = `[Emergency Contacts - Patient #${id}]\n` + JSON.stringify(data, null, 2);
-        } catch (e) { consoleEl.innerText = `[Error]: Failed to fetch contacts.`; }
+        } catch (e) {}
     }
 
     async function generatePrescription() {
@@ -1174,7 +1184,6 @@
                 alert(`Prescription generated locally, but email dispatch failed: ${errText}`);
             }
         } catch (err) {
-            console.error("Prescription Email Error:", err);
             alert("Prescription generated locally, but server connection failed during email dispatch.");
         }
     }

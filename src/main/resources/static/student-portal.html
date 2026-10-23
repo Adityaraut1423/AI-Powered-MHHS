@@ -84,6 +84,12 @@
         .badge-pending { background: #fef3c7; color: #92400e; }
         .badge-alert { background: #fee2e2; color: #991b1b; }
 
+        .table-responsive { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+        th { background: rgba(0,0,0,0.03); padding: 12px 16px; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: rgba(0,0,0,0.02); }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -152,6 +158,7 @@
             <div class="nav-item" onclick="showSection('screeningSec')">📋 Clinical Screening (PHQ-9)</div>
             <div class="nav-item" onclick="showSection('breathSec')">🧘 Guided Box Breathing</div>
             <div class="nav-item" onclick="showSection('counselorSec')">📅 Book Campus Counselor</div>
+            <div class="nav-item" onclick="showSection('receiptsSec')">🧾 Billing & Receipts</div>
             <div class="nav-item" onclick="showSection('helplinesSec')">☎️ Emergency Helplines</div>
             <div class="nav-item" onclick="showSection('sosSec')" style="color: #ff6b6b;">🚨 Trigger Emergency SOS</div>
         </div>
@@ -199,7 +206,7 @@
                 </p>
                 
                 <div id="doctorDirectChatBox" class="chat-box">
-                    <div class="chat-msg ai">Establishing secure connection with Dr. Deshmukh's console...[cite: 6]</div>
+                    <div class="chat-msg ai">Establishing secure connection with Dr. Deshmukh's console...</div>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 12px;">
@@ -421,19 +428,23 @@
             </div>
         </div>
 
-        <!-- 4. CLINICAL SCREENING -->
+        <!-- 4. CLINICAL SCREENING (PHQ-9) -->
         <div id="screeningSec" class="content-section hidden">
             <div class="card">
                 <h3>PHQ-9 Depression Screening Questionnaire</h3>
-                <p style="font-size: 13px; color: #666;">Over the last 2 weeks, how often have you been bothered by feeling down, depressed, or hopeless?</p>
-                <select id="phqScore">
-                    <option value="0">Not at all (Score: 0)</option>
-                    <option value="3">Several days (Score: 3)</option>
-                    <option value="7">More than half the days (Score: 7)</option>
-                    <option value="12">Nearly every day (Score: 12)</option>
-                </select>
-                <button onclick="submitScreening('PHQ-9')" style="margin-top: 12px;">Submit Evaluation</button>
-                <div id="screeningResult" style="margin-top: 16px; font-weight: bold;"></div>
+                <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+                    Over the last 2 weeks, how often have you been bothered by any of the following problems?
+                </p>
+                
+                <form id="phq9AssessmentForm">
+                    <div id="phq9DynamicQuestionsContainer"></div>
+                    <button type="button" onclick="submitFullPhq9Test()" style="margin-top: 20px;">Submit Full PHQ-9 Assessment</button>
+                </form>
+
+                <div id="phq9ResultBox" class="card hidden" style="margin-top: 20px; background: #e8f8f5; border-left: 5px solid #2ecc71;">
+                    <h3 style="margin-top: 0; color: #27ae60;">Assessment Result</h3>
+                    <p id="phq9ResultText" style="font-size: 14px; line-height: 1.6;"></p>
+                </div>
             </div>
         </div>
 
@@ -486,6 +497,29 @@
                 </div>
             </div>
         </div>
+
+        <!-- BILLING & RECEIPTS TAB -->
+        <section id="receiptsSec" class="content-section hidden">
+            <div class="card">
+                <div class="card-header"><div class="card-title">🧾 My Payment Receipts & Invoices</div></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Txn ID</th>
+                                <th>Service Description</th>
+                                <th>Amount Paid</th>
+                                <th>Payment Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentReceiptsTableBody">
+                            <tr><td colspan="5" style="text-align: center;">Loading receipts...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
         <!-- 8. HELPLINES -->
         <div id="helplinesSec" class="content-section hidden">
@@ -1024,6 +1058,23 @@
         window.speechSynthesis.speak(utterance);
     }
 
+    // FREE BROWSER SPEECH SYNTHESIS EMERGENCY VOICE ALERT
+    function playEmergencyVoiceAlert(studentName, location) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const emergencyText = `Emergency alert! Student ${studentName} is in severe distress at location ${location}. Please check your email and database logs immediately.`;
+            
+            const utterance = new SpeechSynthesisUtterance(emergencyText);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+            utterance.volume = 1.0;
+            
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn("Browser speech synthesis not supported.");
+        }
+    }
+
     window.onload = () => {
         initLocationTracking();
         initBubbleGame();
@@ -1086,7 +1137,42 @@
         if (sectionId === 'counselorChatSec') loadStudentCounselorChat();
         if (sectionId === 'predictiveAiSec') initPredictiveMoodChart();
         if (sectionId === 'gratitudeSec') { loadGratitudeHistory(); initBubbleGame(); }
+        if (sectionId === 'screeningSec') { renderPhq9Form(); }
         if (sectionId === 'counselorSec') loadStudentAppointments();
+        if (sectionId === 'receiptsSec') loadStudentReceipts();
+    }
+
+    async function loadStudentReceipts() {
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const tbody = document.getElementById('studentReceiptsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Loading payment receipts...</td></tr>`;
+
+        try {
+            const res = await fetch(`${BASE_URL}/receipts/student/${studentId}`, { headers: getAuthHeaders() });
+            if (res.ok) {
+                const receipts = await res.json();
+                if (!receipts || receipts.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No payment receipts found.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = receipts.map(r => `
+                    <tr>
+                        <td><strong>#${r.transactionId || 'N/A'}</strong></td>
+                        <td>${r.serviceDescription || 'Consultation Service'}</td>
+                        <td><span style="color: var(--success); font-weight: bold;">₹${(r.amountPaid || 0).toFixed(2)}</span></td>
+                        <td>${r.paymentDate ? new Date(r.paymentDate).toLocaleString() : 'N/A'}</td>
+                        <td><span class="badge badge-active">PAID</span></td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Failed to load receipts.</td></tr>`;
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Server connection error.</td></tr>`;
+        }
     }
 
     async function sendAiMessage() {
@@ -1101,9 +1187,16 @@
             const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
             const res = await fetch(`${BASE_URL}/chat/send?studentId=${studentId}&location=${encodeURIComponent(currentGeoLocation)}`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text });
             const reply = await res.text();
+            
             chatBox.innerHTML += `<div class="chat-msg ${reply.includes('CRITICAL') ? 'alert' : 'ai'}">${reply}</div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
-            speakAsJarvis(reply);
+            
+            // Trigger browser audio speech alert if crisis/emergency response is returned
+            if (reply.includes('CRITICAL') || reply.includes('Emergency') || text.toLowerCase().includes('finish my life')) {
+                playEmergencyVoiceAlert(currentUser ? currentUser.name : "Student", currentGeoLocation);
+            } else {
+                speakAsJarvis(reply);
+            }
         } catch (err) {}
     }
 
@@ -1144,14 +1237,88 @@
         `).join('') || "No gratitude notes logged yet.";
     }
 
-    async function submitScreening(type) {
-        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
-        const score = parseInt(document.getElementById('phqScore').value);
-        const res = await fetch(`${BASE_URL}/screening/submit?studentId=${studentId}`, {
-            method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ testType: type, totalScore: score })
+    /* ============================================================
+     * INTERACTIVE PHQ-9 CLINICAL ASSESSMENT SCRIPT
+     * ============================================================ */
+    const phq9QuestionsList = [
+        "Little interest or pleasure in doing things",
+        "Feeling down, depressed, or hopeless",
+        "Trouble falling or staying asleep, or sleeping too much",
+        "Feeling tired or having little energy",
+        "Poor appetite or overeating",
+        "Feeling bad about yourself — or that you are a failure or have let yourself or your family down",
+        "Trouble concentrating on things, such as reading the newspaper or watching television",
+        "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual",
+        "Thoughts that you would be better off dead or of hurting yourself in some way"
+    ];
+
+    const phq9Options = [
+        { text: "Not at all", val: 0 },
+        { text: "Several days", val: 1 },
+        { text: "More than half the days", val: 2 },
+        { text: "Nearly every day", val: 3 }
+    ];
+
+    function renderPhq9Form() {
+        const container = document.getElementById('phq9DynamicQuestionsContainer');
+        if (!container || container.children.length > 0) return;
+
+        phq9QuestionsList.forEach((q, index) => {
+            let qDiv = document.createElement("div");
+            qDiv.className = "question";
+            qDiv.style.cssText = "margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);";
+            qDiv.innerHTML = `<p style="font-weight: 600; color: var(--text-main);"><strong>${index + 1}.</strong> ${q}</p>`;
+            
+            phq9Options.forEach(opt => {
+                qDiv.innerHTML += `
+                    <label style="display: block; margin: 6px 0; cursor: pointer; font-size: 13px;">
+                        <input type="radio" name="phq_q${index}" value="${opt.val}" required style="width: auto; margin-right: 8px;"> 
+                        ${opt.text} (${opt.val})
+                    </label>`;
+            });
+            container.appendChild(qDiv);
         });
-        const data = await res.json();
-        document.getElementById('screeningResult').innerText = `Result: ${data.severity} Risk (Score: ${data.totalScore})`;
+    }
+
+    async function submitFullPhq9Test() {
+        let answers = [];
+        for (let i = 0; i < phq9QuestionsList.length; i++) {
+            let selected = document.querySelector(`input[name="phq_q${i}"]:checked`);
+            if (!selected) {
+                alert(`Please answer question ${i + 1} before submitting.`);
+                return;
+            }
+            answers.push(parseInt(selected.value));
+        }
+
+        const studentId = currentUser ? (currentUser.id || currentUser.studentId || 1) : 1;
+        const payload = { studentId: studentId, answers: answers };
+
+        try {
+            const res = await fetch(`${BASE_URL}/phq9/submit`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                const resultBox = document.getElementById('phq9ResultBox');
+                const resultText = document.getElementById('phq9ResultText');
+                
+                resultBox.classList.remove('hidden');
+                resultText.innerHTML = `<strong>Total Score:</strong> ${data.totalScore} / 27<br>` +
+                                       `<strong>Severity Level:</strong> ${data.severityLevel}<br>` +
+                                       `<small style="color: #555;">Recorded at: ${new Date(data.timestamp).toLocaleString()}</small>`;
+                
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert("Failed to submit PHQ-9 assessment.");
+            }
+        } catch (err) {
+            console.error("PHQ-9 Submission Error:", err);
+            alert("Network error while submitting assessment.");
+        }
     }
 
     function toggleBreathing() {

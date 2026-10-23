@@ -24,8 +24,7 @@ public class SosOrchestratorService {
     private final EmergencyContactRepository contactRepository;
     private final SosAlertRepository sosAlertRepository;
     private final StudentUserRepository studentUserRepository;
-    private final TwilioSmsService smsService;
-    private final EmailService emailService;
+    private final FreePhoneCallService freePhoneCallService; // Free Call Service injection
 
     @Transactional
     public SosAlert triggerEmergency(Long studentId, String triggerType, String liveLocation) {
@@ -56,25 +55,12 @@ public class SosOrchestratorService {
             log.warn("No emergency contacts found for Student ID: {}", studentId);
         }
 
-        String smsBody = String.format(
-            "EMERGENCY ALERT: %s needs urgent help! Location: %s. Statement: %s",
-            studentName, validLocation, triggerType
-        );
-
-        // 4. Send Email & SMS to all registered contacts
+        // 4. Trigger Free Automated Emergency Voice Call to all registered guardian numbers
         for (EmergencyContact contact : contacts) {
-            // SMS Dispatch
             if (contact.getPhoneNumber() != null && !contact.getPhoneNumber().isBlank()) {
-                smsService.sendSms(contact.getPhoneNumber(), smsBody);
-            }
-
-            // Email Dispatch with Google Maps Pinpoint
-            if (contact.getEmail() != null && !contact.getEmail().isBlank()) {
-                emailService.sendGuardianEmergencyEmail(
-                    contact.getEmail(),
-                    contact.getName(),
-                    studentName,
-                    triggerType,
+                freePhoneCallService.triggerEmergencyCall(
+                    contact.getPhoneNumber(), 
+                    studentName, 
                     validLocation
                 );
             }

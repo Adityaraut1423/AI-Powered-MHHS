@@ -47,14 +47,14 @@ public class EmailService {
 
             helper.setFrom(senderEmail);
             helper.setTo(studentEmail);
-            helper.setSubject("📅 MindSpace: Counseling Session Confirmed & AI Intake Ready");
+            helper.setSubject("📅 MindSpace: Counseling Session Requested & AI Intake Ready");
 
             String htmlBody = String.format("""
                 <!DOCTYPE html>
                 <html>
                 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
                     <div style="background-color: #2563eb; color: white; padding: 16px; border-radius: 6px; text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0;">📅 COUNSELING APPOINTMENT CONFIRMED</h2>
+                        <h2 style="margin: 0;">📅 COUNSELING APPOINTMENT REQUESTED</h2>
                     </div>
 
                     <p><strong>Hello %s,</strong></p>
@@ -64,7 +64,7 @@ public class EmailService {
                     <table style="width: 100%%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; padding: 12px; border-radius: 6px;">
                         <tr><td style="padding: 8px;"><strong>Scheduled Date & Time:</strong></td><td style="padding: 8px; font-weight: bold; color: #2563eb;">%s</td></tr>
                         <tr><td style="padding: 8px;"><strong>Consultation Notes:</strong></td><td style="padding: 8px; font-style: italic;">"%s"</td></tr>
-                        <tr><td style="padding: 8px;"><strong>Status:</strong></td><td style="padding: 8px; color: #16a34a; font-weight: bold;">REQUESTED / PENDING REVIEW</td></tr>
+                        <tr><td style="padding: 8px;"><strong>Status:</strong></td><td style="padding: 8px; color: #d97706; font-weight: bold;">REQUESTED / PENDING REVIEW</td></tr>
                     </table>
 
                     <p>In the meantime, you can begin your preliminary preparation session right away by logging into your student portal and conversing with <strong>JARVIS AI</strong>.</p>
@@ -90,11 +90,59 @@ public class EmailService {
 
             helper.setText(htmlBody, true);
             mailSender.send(mimeMessage);
-            log.info("Appointment confirmation email successfully dispatched to student: {}", studentEmail);
+            log.info("Appointment request email successfully dispatched to student: {}", studentEmail);
 
         } catch (Exception e) {
             log.warn("HTML appointment email dispatch failed ({}), falling back to plain text email.", e.getMessage());
             sendAppointmentPlainTextFallback(studentEmail, salutationName, formattedTime, consultationNotes);
+        }
+    }
+
+    /**
+     * Sends official confirmation email when counselor approves/confirms the appointment.
+     */
+    public void sendAppointmentStatusUpdateEmail(String studentEmail, String studentName, String appointmentTime, String status) {
+        if (studentEmail == null || studentEmail.isBlank() || mailSender == null) {
+            return;
+        }
+
+        String safeName = (studentName != null && !studentName.isBlank()) ? studentName : "Student";
+        String safeTime = (appointmentTime != null && !appointmentTime.isBlank()) ? appointmentTime : "As Scheduled";
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(senderEmail);
+            helper.setTo(studentEmail);
+            helper.setSubject("📅 MindSpace: Your Counseling Appointment is " + status);
+
+            String htmlBody = String.format("""
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
+                    <div style="background-color: #16a34a; color: white; padding: 16px; border-radius: 6px; text-align: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">📅 APPOINTMENT %s</h2>
+                    </div>
+                    <p><strong>Hello %s,</strong></p>
+                    <p>Your campus counseling session scheduled for <strong>%s</strong> has been officially updated to: <strong style="color: #16a34a;">%s</strong>.</p>
+                    <p>Please check your student portal dashboard for further details or join your session on time.</p>
+                    <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 24px 0;">
+                    <p style="font-size: 11px; color: #64748b; text-align: center;">MindSpace Enterprise Care Systems</p>
+                </body>
+                </html>
+                """,
+                status,
+                safeName,
+                safeTime,
+                status
+            );
+
+            helper.setText(htmlBody, true);
+            mailSender.send(mimeMessage);
+            log.info("Appointment status update email sent to student: {}", studentEmail);
+        } catch (Exception e) {
+            log.error("Failed to send status update email to {}: {}", studentEmail, e.getMessage());
         }
     }
 
@@ -110,9 +158,9 @@ public class EmailService {
 
                 Your confidential campus counseling session has been successfully scheduled.
 
-                • Scheduled Date & Time: %s
-                • Consultation Notes: "%s"
-                • Status: REQUESTED / PENDING REVIEW
+                - Scheduled Date & Time: %s
+                - Consultation Notes: "%s"
+                - Status: REQUESTED / PENDING REVIEW
 
                 You can begin your preliminary preparation session right away by interacting with JARVIS AI on your student portal.
 
@@ -220,6 +268,63 @@ public class EmailService {
         }
     }
 
+    /**
+     * Sends official digital payment receipt to the student's email inbox.
+     */
+    public void sendReceiptEmail(String studentEmail, String studentName, String serviceDescription, Double amount, String transactionId, String date) {
+        if (studentEmail == null || studentEmail.isBlank() || mailSender == null) {
+            return;
+        }
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(senderEmail);
+            helper.setTo(studentEmail);
+            helper.setSubject("🧾 MindSpace Billing: Official Payment Receipt #" + transactionId);
+
+            String htmlBody = String.format("""
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 24px;">
+                    <div style="background-color: #2563eb; color: white; padding: 16px; border-radius: 6px; text-align: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">MINDSPACE ENTERPRISE BILLING</h2>
+                        <p style="margin: 4px 0 0; font-size: 13px;">Official Digital Payment Receipt</p>
+                    </div>
+
+                    <p><strong>Dear %s,</strong></p>
+                    <p>Thank you for your payment. Below are the official transaction details for your records.</p>
+
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 16px 0; font-size: 14px;">
+                        <p style="margin: 0 0 8px 0;"><strong>Transaction ID:</strong> #%s</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Date & Time:</strong> %s</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Service Rendered:</strong> %s</p>
+                        <p style="margin: 0 0 12px 0;"><strong>Amount Paid:</strong> <span style="color: #16a34a; font-weight: bold;">₹%.2f</span></p>
+                        <p style="margin: 0; color: #0d9488; font-weight: bold;">Status: SUCCESSFUL / PAID</p>
+                    </div>
+
+                    <p style="font-size: 11px; color: #64748b; margin-top: 30px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                        This is a computer-generated digital receipt from MindSpace Care Systems.
+                    </p>
+                </body>
+                </html>
+                """,
+                (studentName != null ? studentName : "Student"),
+                transactionId,
+                date,
+                serviceDescription,
+                amount
+            );
+
+            helper.setText(htmlBody, true);
+            mailSender.send(mimeMessage);
+            log.info("Digital payment receipt successfully dispatched to student: {}", studentEmail);
+        } catch (Exception e) {
+            log.error("Failed to dispatch receipt email to {}: {}", studentEmail, e.getMessage());
+        }
+    }
+
     public void sendGuardianEmergencyEmail(String guardianEmail, String guardianName, String studentName, String crisisMessage, String liveLocation) {
         if (guardianEmail == null || guardianEmail.isBlank()) {
             log.error("Guardian email is null or empty. Skipping emergency email dispatch.");
@@ -232,16 +337,11 @@ public class EmailService {
         }
 
         String formattedLocation = (liveLocation != null && !liveLocation.isBlank()) ? liveLocation : "Campus Grounds / Location Unavailable";
-
-        // 1. Extract clean numeric coordinates (e.g., "Lat: 20.94527, Lon: 77.77428" -> "20.94527,77.77428")
         String cleanCoords = extractCoordinates(formattedLocation);
-
-        // 2. Build precise Google Maps URL for pinpoint navigation
         String googleMapsUrl = "https://www.google.com/maps/search/?api=1&query=" + cleanCoords;
         String salutationName = (guardianName != null && !guardianName.isBlank()) ? guardianName : "Parent / Guardian";
 
         try {
-            // Attempt sending rich HTML email for clickable Google Maps link
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
@@ -321,10 +421,10 @@ public class EmailService {
 
                 This is an automated CRITICAL EMERGENCY ALERT from the MindSpace Safety System.
 
-                • Student Name: %s
-                • Risk Detected: Severe Distress Keyword Match
-                • Trigger Statement: "%s"
-                • Live Location Status: Live Campus GPS Pinpoint Active
+                - Student Name: %s
+                - Risk Detected: Severe Distress Keyword Match
+                - Trigger Statement: "%s"
+                - Live Location Status: Live Campus GPS Pinpoint Active
 
                 📍 Google Maps Live Navigation Link:
                 %s
@@ -334,9 +434,9 @@ public class EmailService {
                 Please contact %s immediately or reach out to campus emergency teams.
 
                 Emergency Helplines (India):
-                • Tele-MANAS: 14416 / 1800-891-4416
-                • KIRAN Helpline: 1800-599-0019
-                • Vandrevala Foundation: +91 9999 666 555
+                - Tele-MANAS: 14416 / 1800-891-4416
+                - KIRAN Helpline: 1800-599-0019
+                - Vandrevala Foundation: +91 9999 666 555
                 """,
                 salutationName,
                 studentName,

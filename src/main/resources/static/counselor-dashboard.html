@@ -211,8 +211,11 @@
         <span>Practitioner:</span>
         <select id="activeCounselorId" onchange="switchCounselorContext()" style="width: 190px; padding: 4px 8px; border-radius: 4px; color: #000;">
             <option value="1">Dr. Ananya Roy (ID #1)</option>
-            <option value="2">Dr. Rajesh Kumar (ID #2)</option>
-            <option value="3">Dr. Priya Sharma (ID #3)</option>
+            <option value="2">Prof. Rajesh Deshmukh (ID #2)</option>
+            <option value="3">Dr. Sunita Kulkarni (ID #3)</option>
+            <option value="4">Dr. Vikramaditya Joshi (ID #4)</option>
+            <option value="5">Ms. Pooja Verma (ID #5)</option>
+            <option value="6">Dr. Sameer Patil (ID #6)</option>
         </select>
         <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
         <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
@@ -228,7 +231,7 @@
         <nav class="nav-menu">
             <button class="nav-btn active" onclick="switchTab('overviewTab', this)">📊 Clinical Overview</button>
             <button class="nav-btn" onclick="switchTab('appointmentsTab', this)">📅 Appointment Queue</button>
-            <button class="nav-btn" onclick="switchTab('studentChatTab', this)">💬 Talk with Students</button> <!-- NEW OPTION -->
+            <button class="nav-btn" onclick="switchTab('studentChatTab', this)">💬 Talk with Students</button>
             <button class="nav-btn" onclick="switchTab('patientsTab', this)">👤 Patient Diagnostics</button>
             <button class="nav-btn" onclick="switchTab('notesTab', this)">📝 SOAP & Treatment Plan</button>
             <button class="nav-btn" onclick="switchTab('sosTab', this)">🚨 Crisis Command Center</button>
@@ -305,13 +308,6 @@
                                 <td>Follow-up Scheduled</td>
                                 <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(101, 'Aadi Sharma')">Inspect Drawer</button></td>
                             </tr>
-                            <tr>
-                                <td>#102 - Priya Verma</td>
-                                <td><span class="badge badge-confirmed">LOW RISK</span></td>
-                                <td>GAD-7 Score: 4 (Minimal)</td>
-                                <td>Stable State</td>
-                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(102, 'Priya Verma')">Inspect Drawer</button></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -353,7 +349,7 @@
             </div>
         </section>
 
-        <!-- NEW TAB: TALK WITH STUDENTS DIRECT CHAT & VIDEO HUB -->
+        <!-- TAB: TALK WITH STUDENTS DIRECT CHAT & VIDEO HUB -->
         <section id="studentChatTab" class="tab-view hidden">
             <div class="card">
                 <div class="card-header">
@@ -623,7 +619,6 @@
     let trendsChartInst = null;
     let outcomeChartInst = null;
 
-    // Local ICD-10 Database Mock
     const icdDatabase = [
         { code: "F41.1", name: "Generalized Anxiety Disorder", desc: "Excessive anxiety and worry occurring more days than not for at least 6 months." },
         { code: "F32.1", name: "Major Depressive Disorder, Single Episode, Moderate", desc: "Depressed mood, loss of interest/pleasure, and decreased energy." },
@@ -932,12 +927,17 @@
     async function updateAppointmentStatus(id, status) {
         try {
             const res = await fetch(`${BASE_URL}/counselors/appointments/${id}/status?status=${status}`, { method: 'PUT' });
-            if (res.ok) loadAppointments();
+            if (res.ok) {
+                loadAppointments();
+            } else {
+                const errText = await res.text();
+                alert(errText || "Failed to update status.");
+            }
         } catch (err) { alert("Failed to update status"); }
     }
 
     /* ============================================================
-     * TALK WITH STUDENTS CHAT & VIDEO HUB (CORRECTED SENDER LABELS)
+     * TALK WITH STUDENTS CHAT & VIDEO HUB
      * ============================================================ */
     async function loadStudentContactDropdown() {
         const select = document.getElementById('counselorChatStudentSelect');
@@ -981,7 +981,6 @@
                     return;
                 }
                 const newHtml = messages.map(m => {
-                    // Correctly distinguish sender: if sender is COUNSELOR/DOCTOR, show 'You (Counselor)', otherwise show 'Student'
                     const isPractitioner = m.sender === 'COUNSELOR' || m.sender === 'DOCTOR' || m.sender === 'PRACTITIONER';
                     const msgClass = isPractitioner ? 'user' : 'student';
                     const senderLabel = isPractitioner ? 'You (Counselor): ' : 'Student: ';

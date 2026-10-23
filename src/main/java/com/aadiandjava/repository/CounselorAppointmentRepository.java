@@ -12,6 +12,7 @@ import com.aadiandjava.entity.CounselorAppointment;
 @Repository
 public interface CounselorAppointmentRepository extends JpaRepository<CounselorAppointment, Long> {
 
+    List<CounselorAppointment> findByStudentId(Long studentId);
     List<CounselorAppointment> findByStudentIdOrderByAppointmentTimeDesc(Long studentId);
     List<CounselorAppointment> findByCounselorIdOrderByAppointmentTimeDesc(Long counselorId);
 

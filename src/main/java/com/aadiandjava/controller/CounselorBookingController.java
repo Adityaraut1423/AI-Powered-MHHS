@@ -50,37 +50,49 @@ public class CounselorBookingController {
         return ResponseEntity.ok(counselorRepository.findByIsAvailableTrue());
     }
 
-    @Operation(summary = "Book a confidential counseling session and trigger student confirmation email")
+    @Operation(summary = "Book a confidential campus counselor appointment and trigger student confirmation email")
     @PostMapping("/book")
-    public ResponseEntity<CounselorAppointment> bookAppointment(
-            @RequestParam Long studentId,
-            @RequestParam Long counselorId,
-            @RequestBody CounselorAppointment appointment) {
+    public ResponseEntity<?> bookAppointment(
+            @RequestParam Long studentId, 
+            @RequestParam Long counselorId, 
+            @RequestBody CounselorAppointment appointmentRequest) {
+        
+        try {
+            // 1. Verify if the counselor exists
+            Counselor counselor = counselorRepository.findById(counselorId).orElse(null);
+            if (counselor == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Counselor ID not found.");
+            }
 
-        return counselorRepository.findById(counselorId).map(counselor -> {
-            appointment.setStudentId(studentId);
-            appointment.setCounselorId(counselorId);
-            appointment.setStatus("REQUESTED");
+            // 2. Save the appointment in MySQL
+            appointmentRequest.setStudentId(studentId);
+            appointmentRequest.setCounselorId(counselorId);
+            appointmentRequest.setStatus("CONFIRMED");
+            CounselorAppointment savedAppointment = appointmentRepository.save(appointmentRequest);
 
-            CounselorAppointment savedAppointment = appointmentRepository.save(appointment);
+            log.info("Counselor appointment scheduled successfully for Student ID: {} with Counselor ID: {}", studentId, counselorId);
 
-            // Safely fetch student record and trigger confirmation email without interrupting the booking process[cite: 3]
-            try {
-                StudentUser student = studentUserRepository.findById(studentId).orElse(null);
-                if (student != null && student.getEmail() != null) {
-                    emailService.sendAppointmentConfirmationEmail(
-                        student.getEmail(),
-                        student.getName(),
-                        savedAppointment.getAppointmentTime() != null ? savedAppointment.getAppointmentTime().toString() : "Scheduled",
-                        savedAppointment.getNotes()
-                    );
-                }
-            } catch (Exception e) {
-                log.error("Non-blocking email dispatch error during appointment booking: {}", e.getMessage(), e);
+            // 3. Fetch student details to get their email and name
+            StudentUser student = studentUserRepository.findById(studentId).orElse(null);
+            
+            // 4. Dispatch professional HTML confirmation email to the student[cite: 3]
+            if (student != null && student.getEmail() != null && !student.getEmail().isBlank()) {
+                emailService.sendAppointmentConfirmationEmail(
+                    student.getEmail(),
+                    student.getName(),
+                    savedAppointment.getAppointmentTime() != null ? savedAppointment.getAppointmentTime().toString() : "As Scheduled",
+                    savedAppointment.getNotes()
+                );
+            } else {
+                log.warn("Student email not found for ID: {}. Skipping confirmation email.", studentId);
             }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedAppointment);
-        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+
+        } catch (Exception e) {
+            log.error("Failed to book counselor appointment: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Failed to schedule appointment: " + e.getMessage());
+        }
     }
 
     @Operation(summary = "Fetch appointment history for a student ordered by date descending")
@@ -95,15 +107,28 @@ public class CounselorBookingController {
         return ResponseEntity.ok(appointmentRepository.findByCounselorIdOrderByAppointmentTimeDesc(counselorId));
     }
 
-    @Operation(summary = "Update lifecycle state of an appointment (CONFIRMED, COMPLETED, CANCELLED)")
+    @Operation(summary = "Update lifecycle state of an appointment with protection against altering confirmed sessions")
     @PutMapping("/appointments/{appointmentId}/status")
-    public ResponseEntity<CounselorAppointment> updateAppointmentStatus(
+    public ResponseEntity<?> updateAppointmentStatus(
             @PathVariable Long appointmentId,
             @RequestParam String status) {
 
         return appointmentRepository.findById(appointmentId).map(appointment -> {
-            appointment.setStatus(status.toUpperCase());
+            String currentStatus = appointment.getStatus() != null ? appointment.getStatus().toUpperCase() : "";
+            String newStatus = status.toUpperCase();
+
+            // Prevent changing status if it's already confirmed or completed
+            if ("CONFIRMED".equals(currentStatus) && "CANCELLED".equals(newStatus)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Cannot reject or cancel an appointment that has already been confirmed.");
+            }
+            if ("COMPLETED".equals(currentStatus)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Cannot modify an appointment that has already been marked as completed.");
+            }
+
+            appointment.setStatus(newStatus);
             return ResponseEntity.ok(appointmentRepository.save(appointment));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Appointment not found."));
     }
 }
