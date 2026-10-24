@@ -1,13 +1,15 @@
 package com.aadiandjava.service;
 
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Service;
+
 import com.aadiandjava.dto.Phq9SubmissionDto;
 import com.aadiandjava.entity.Phq9Result;
 import com.aadiandjava.repository.Phq9ResultRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -57,7 +59,7 @@ public class Phq9Service {
 
         Phq9Result saved = phq9ResultRepository.save(result);
         log.info("PHQ-9 Test evaluated for Student ID: {}. Total Score: {}, Severity: {}", submission.getStudentId(), totalScore, severity);
-        
+
         return saved;
     }
 }

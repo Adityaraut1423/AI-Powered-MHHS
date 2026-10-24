@@ -1,11 +1,16 @@
 package com.aadiandjava.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.aadiandjava.dto.Phq9SubmissionDto;
 import com.aadiandjava.entity.Phq9Result;
 import com.aadiandjava.service.Phq9Service;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/phq9") // Added /v1 here to match BASE_URL

@@ -53,10 +53,10 @@ public class CounselorBookingController {
     @Operation(summary = "Book a confidential campus counselor appointment and trigger student confirmation email")
     @PostMapping("/book")
     public ResponseEntity<?> bookAppointment(
-            @RequestParam Long studentId, 
-            @RequestParam Long counselorId, 
+            @RequestParam Long studentId,
+            @RequestParam Long counselorId,
             @RequestBody CounselorAppointment appointmentRequest) {
-        
+
         try {
             // 1. Verify if the counselor exists
             Counselor counselor = counselorRepository.findById(counselorId).orElse(null);
@@ -74,7 +74,7 @@ public class CounselorBookingController {
 
             // 3. Fetch student details to get their email and name
             StudentUser student = studentUserRepository.findById(studentId).orElse(null);
-            
+
             // 4. Dispatch professional HTML confirmation email to the student[cite: 3]
             if (student != null && student.getEmail() != null && !student.getEmail().isBlank()) {
                 emailService.sendAppointmentConfirmationEmail(

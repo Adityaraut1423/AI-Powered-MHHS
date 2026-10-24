@@ -3,6 +3,7 @@ package com.aadiandjava.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -15,7 +16,7 @@ public class FreePhoneCallService {
         try {
             // Ensure phone format is clean (E.164 format with country code)
             String toPhone = guardianPhoneNumber.startsWith("+") ? guardianPhoneNumber : "+91" + guardianPhoneNumber;
-            
+
             // Construct the text-to-speech message that the automated voice will read aloud
             String speechMessage = String.format(
                 "Emergency Alert! Student %s is in severe distress at location %s. Please check your email and database logs immediately.",

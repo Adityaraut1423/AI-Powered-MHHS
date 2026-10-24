@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -46,7 +47,10 @@ public class AdminController {
     @Autowired
     private AdminRepository adminRepository;
 
-    // 0. Secure Administrator Login Endpoint
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // 0. Secure Administrator Login Endpoint (Updated to use BCrypt)
     @Operation(summary = "Authenticate system administrator login")
     @PostMapping("/login")
     public ResponseEntity<?> authenticateAdmin(@RequestBody Map<String, String> credentials) {
@@ -59,7 +63,8 @@ public class AdminController {
 
         Admin admin = adminRepository.findByEmail(email).orElse(null);
 
-        if (admin != null && admin.getPassword().equals(password)) {
+        // Uses passwordEncoder.matches() for encrypted hashes, with a fallback for plaintext if needed
+        if (admin != null && (passwordEncoder.matches(password, admin.getPassword()) || admin.getPassword().equals(password))) {
             return ResponseEntity.ok(admin);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid administrator credentials."));

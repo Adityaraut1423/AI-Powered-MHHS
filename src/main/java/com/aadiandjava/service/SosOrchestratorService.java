@@ -59,8 +59,8 @@ public class SosOrchestratorService {
         for (EmergencyContact contact : contacts) {
             if (contact.getPhoneNumber() != null && !contact.getPhoneNumber().isBlank()) {
                 freePhoneCallService.triggerEmergencyCall(
-                    contact.getPhoneNumber(), 
-                    studentName, 
+                    contact.getPhoneNumber(),
+                    studentName,
                     validLocation
                 );
             }
