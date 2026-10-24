@@ -22,11 +22,11 @@ public class Application {
     @Bean
     CommandLineRunner initializeAdmin(StudentUserRepository repository, PasswordEncoder encoder) {
         return args -> {
-            repository.findByEmail("emailforproject659@gmail.com").ifPresentOrElse(admin -> {
+            repository.findByEmail("admin@mindspace.edu").ifPresentOrElse(admin -> {
                 admin.setPassword(encoder.encode("admin123"));
                 admin.setRole(UserRole.ROLE_ADMIN);
                 repository.save(admin);
-                System.out.println(">>> ADMIN CREDENTIALS UPDATED: emailforproject659@gmail.com / admin123 <<<");
+                System.out.println(">>> ADMIN CREDENTIALS UPDATED: admin@mindspace.edu / admin123 <<<");
             }, () -> {
                 System.out.println(">>> ADMIN USER NOT FOUND IN DATABASE. Please register an account with this email first! <<<");
             });
