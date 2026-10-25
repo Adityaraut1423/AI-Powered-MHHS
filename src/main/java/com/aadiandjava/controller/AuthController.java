@@ -34,7 +34,7 @@ public class AuthController {
 
     private final StudentUserRepository studentUserRepository;
     private final CounselorRepository counselorRepository;
-    private final DoctorRepository doctorRepository; // <-- Added Doctor Repository
+    private final DoctorRepository doctorRepository;
     private final EmergencyContactRepository emergencyContactRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -50,6 +50,7 @@ public class AuthController {
         student.setName(request.get("name"));
         student.setEmail(email);
         student.setPhoneNumber(request.get("phoneNumber"));
+        // Encodes student password securely using BCrypt
         student.setPassword(passwordEncoder.encode(request.get("password")));
 
         String roleStr = request.get("role");
@@ -90,12 +91,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required!"));
         }
 
-        // 1. Handle COUNSELOR Login
+        // 1. Handle COUNSELOR Login (Plain-text password comparison)
         if ("ROLE_COUNSELOR".equalsIgnoreCase(expectedRole)) {
             Optional<Counselor> counselorOpt = counselorRepository.findByEmail(email);
             if (counselorOpt.isPresent()) {
                 Counselor counselor = counselorOpt.get();
-                if (passwordEncoder.matches(rawPassword, counselor.getPassword())) {
+                if (rawPassword.equals(counselor.getPassword())) {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "SUCCESS");
                     response.put("token", "dummy-jwt-token-counselor-" + counselor.getId());
@@ -109,12 +110,12 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid counselor email or password"));
         }
 
-        // 2. Handle DOCTOR Login
+        // 2. Handle DOCTOR Login (Plain-text password comparison)
         if ("ROLE_DOCTOR".equalsIgnoreCase(expectedRole)) {
             Optional<Doctor> doctorOpt = doctorRepository.findByEmail(email);
             if (doctorOpt.isPresent()) {
                 Doctor doctor = doctorOpt.get();
-                if (passwordEncoder.matches(rawPassword, doctor.getPassword())) {
+                if (rawPassword.equals(doctor.getPassword())) {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "SUCCESS");
                     response.put("token", "dummy-jwt-token-doctor-" + doctor.getId());
@@ -128,7 +129,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid doctor email or password"));
         }
 
-        // 3. Handle STUDENT Login (Default)
+        // 3. Handle STUDENT Login (BCrypt hashed password comparison)
         Optional<StudentUser> userOpt = studentUserRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             StudentUser user = userOpt.get();
