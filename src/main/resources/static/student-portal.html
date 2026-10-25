@@ -551,7 +551,11 @@
 </div>
 
 <script>
-    const BASE_URL = "http://localhost:8080/api/v1";
+    // Automatically switches between local and live cloud backend URL based on host
+    const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? "http://localhost:8080/api/v1" 
+        : "https://ai-powered-mhhs.onrender.com/api/v1";
+
     let currentUser = JSON.parse(localStorage.getItem('student_user')) || null;
     let moodChartInstance = null;
     let predictiveChartInst = null;
