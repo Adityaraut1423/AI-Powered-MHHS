@@ -33,4 +33,6 @@ public class Doctor {
 
     private String phoneNumber;
     private String specialization;
+    
+    private String role; // <-- Added to match the doctor login payload and database role column
 }

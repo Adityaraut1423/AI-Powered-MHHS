@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aadiandjava.entity.Counselor;
+import com.aadiandjava.entity.Doctor;
 import com.aadiandjava.entity.EmergencyContact;
 import com.aadiandjava.entity.StudentUser;
 import com.aadiandjava.entity.UserRole;
 import com.aadiandjava.repository.CounselorRepository;
+import com.aadiandjava.repository.DoctorRepository;
 import com.aadiandjava.repository.EmergencyContactRepository;
 import com.aadiandjava.repository.StudentUserRepository;
 
@@ -31,7 +33,8 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final StudentUserRepository studentUserRepository;
-    private final CounselorRepository counselorRepository; // <-- Added Counselor Repository
+    private final CounselorRepository counselorRepository;
+    private final DoctorRepository doctorRepository; // <-- Added Doctor Repository
     private final EmergencyContactRepository emergencyContactRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -81,7 +84,7 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String rawPassword = request.get("password");
-        String expectedRole = request.get("role"); // e.g., "ROLE_COUNSELOR", "ROLE_STUDENT"
+        String expectedRole = request.get("role"); // e.g., "ROLE_DOCTOR", "ROLE_COUNSELOR", "ROLE_STUDENT"
 
         if (email == null || rawPassword == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required!"));
@@ -92,7 +95,6 @@ public class AuthController {
             Optional<Counselor> counselorOpt = counselorRepository.findByEmail(email);
             if (counselorOpt.isPresent()) {
                 Counselor counselor = counselorOpt.get();
-                // Since NoOpPasswordEncoder is used, passwordEncoder.matches compares plain text directly
                 if (passwordEncoder.matches(rawPassword, counselor.getPassword())) {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "SUCCESS");
@@ -107,7 +109,26 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid counselor email or password"));
         }
 
-        // 2. Handle STUDENT Login (Default)
+        // 2. Handle DOCTOR Login
+        if ("ROLE_DOCTOR".equalsIgnoreCase(expectedRole)) {
+            Optional<Doctor> doctorOpt = doctorRepository.findByEmail(email);
+            if (doctorOpt.isPresent()) {
+                Doctor doctor = doctorOpt.get();
+                if (passwordEncoder.matches(rawPassword, doctor.getPassword())) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "SUCCESS");
+                    response.put("token", "dummy-jwt-token-doctor-" + doctor.getId());
+                    response.put("id", doctor.getId());
+                    response.put("name", doctor.getName());
+                    response.put("email", doctor.getEmail());
+                    response.put("role", "ROLE_DOCTOR");
+                    return ResponseEntity.ok(response);
+                }
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid doctor email or password"));
+        }
+
+        // 3. Handle STUDENT Login (Default)
         Optional<StudentUser> userOpt = studentUserRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             StudentUser user = userOpt.get();
