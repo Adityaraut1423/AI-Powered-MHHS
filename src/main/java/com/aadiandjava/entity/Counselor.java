@@ -24,6 +24,7 @@ public class Counselor {
     private String specialization; // e.g., "Anxiety & Academic Stress", "Crisis Support"
     private String email;
     private String phoneNumber;
-    private String password; // <-- Added missing password field to match database column
+    private String password; 
+    private String role; // <-- Added to match the frontend role payload ("ROLE_COUNSELOR")
     private Boolean isAvailable = true;
 }
