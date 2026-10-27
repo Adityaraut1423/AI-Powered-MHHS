@@ -249,6 +249,7 @@
         <strong id="loggedInDoctorName">Dr. Sameer Deshmukh, M.D. (Psychiatry)</strong>
         <button onclick="toggleDarkMode()" style="background: transparent; border: 1px solid #ffffff44; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🌓 Theme</button>
         <span id="systemClock" style="font-weight: 700; color: #38bdf8;">--:--:--</span>
+        <button onclick="handleDoctorLogout()" style="background: var(--danger); border: none; color: white; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: 700;">Logout</button>
     </div>
 </header>
 
@@ -660,7 +661,7 @@
     let sessionSeconds = 0;
     let doctorChatPollInterval = null;
     let loggedInDoctor = null;
-    let issuedPrescriptionsCount = 1; // Starts at 1 based on your active database state
+    let issuedPrescriptionsCount = 1;
 
     let knownSosIds = new Set();
     let isInitialSosPoll = true;
@@ -676,12 +677,18 @@
     window.onload = () => {
         startClock();
         initCharts();
+        loadPracticeMetrics();
     };
+
+    /* LOGOUT HANDLER */
+    function handleDoctorLogout() {
+        localStorage.removeItem('student_user');
+        window.location.href = "index.html";
+    }
 
     /* DYNAMICALLY LOAD REAL PATIENT & PRESCRIPTION COUNTS FROM DATABASE */
     async function loadPracticeMetrics() {
         try {
-            // Fetch students count (5 students)
             const resStudents = await fetch(`${BASE_URL}/admin/students/comprehensive`);
             if (resStudents.ok) {
                 const students = await resStudents.json();
@@ -690,6 +697,11 @@
                 document.getElementById('sidebarReferrals').innerText = totalCount;
             }
 
+            const resRx = await fetch(`${BASE_URL}/prescriptions/all`);
+            if (resRx.ok) {
+                const rxList = await resRx.json();
+                issuedPrescriptionsCount = rxList.length || 1;
+            }
             document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
         } catch (err) {
             console.error("Failed to load practice metrics count:", err);
@@ -719,22 +731,17 @@
 
             if (res.ok) {
                 loggedInDoctor = await res.json();
-                
-                // Hide login modal
                 document.getElementById('doctorLoginModal').style.display = 'none';
-                
-                // Update header badge and prescription templates with logged-in doctor name
                 document.getElementById('loggedInDoctorName').innerText = `${loggedInDoctor.name}, M.D.`;
                 document.getElementById('rxPreviewDoctorName').innerText = `${loggedInDoctor.name}, M.D.`;
                 document.getElementById('videoHostNameLabel').innerText = `${loggedInDoctor.name} (Host)`;
 
-                // Initialize dashboard engine and dynamic metrics
                 startSosMonitoring();
                 startChatPolling();
                 fetchStudentNameById();
                 loadAllStudentsDirectory();
                 loadStudentContactDropdown();
-                loadPracticeMetrics(); // Dynamically updates patient count to 5 and prescription count to 1
+                loadPracticeMetrics();
             } else {
                 errorEl.innerText = "Access Denied: Invalid doctor credentials.";
             }
@@ -1205,7 +1212,6 @@
         document.getElementById('rxPreviewDirectives').innerText = directives;
         document.getElementById('rxPreviewDate').innerText = new Date().toLocaleDateString();
 
-        // Reveal enlarged preview sheet
         document.getElementById('rxPreviewSheet').classList.remove('hidden');
 
         try {
@@ -1217,7 +1223,6 @@
                 directives: directives
             };
 
-            // Sends prescription data to backend endpoint to email student
             const res = await fetch(`${BASE_URL}/prescriptions/issue-and-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1227,7 +1232,7 @@
             if (res.ok) {
                 issuedPrescriptionsCount++;
                 document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
-                alert(`✓ Prescription successfully generated, signed, and emailed to student ${patientName} (#${patientId})!`);
+                alert(`✓ Success! Your prescription has been securely issued and successfully sent via email to student ${patientName} (#${patientId}).`);
             } else {
                 const errText = await res.text();
                 alert(`Prescription generated locally, but email dispatch failed: ${errText}`);
@@ -1291,11 +1296,35 @@
     function openDirectPrescriptionModal() { document.getElementById('fastRxModal').style.display = 'flex'; }
     function closeDirectPrescriptionModal() { document.getElementById('fastRxModal').style.display = 'none'; }
 
-    function submitModalPrescription() {
+    async function submitModalPrescription() {
         const patientId = document.getElementById('modalRxPatientId').value;
-        issuedPrescriptionsCount++;
-        document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
-        alert(`Fast Prescription issued and signed for Patient #${patientId}.`);
+        const meds = document.getElementById('modalRxMeds').value;
+        const diag = document.getElementById('modalRxDiag').value;
+
+        try {
+            const payload = {
+                studentId: parseInt(patientId),
+                diagnosis: diag,
+                medications: meds,
+                directives: "Standard care protocol"
+            };
+
+            const res = await fetch(`${BASE_URL}/prescriptions/issue-and-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                issuedPrescriptionsCount++;
+                document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
+                alert(`✓ Success! Fast prescription issued and successfully emailed to student #${patientId}.`);
+            } else {
+                alert(`Prescription issued locally, but email dispatch encountered an error.`);
+            }
+        } catch (e) {
+            alert("Server error during fast prescription dispatch.");
+        }
         closeDirectPrescriptionModal();
     }
 
