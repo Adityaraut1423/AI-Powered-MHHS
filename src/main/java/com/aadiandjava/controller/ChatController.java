@@ -28,13 +28,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@Tag(name = "AI Chat Assistant & Doctor Direct Messaging", description = "24/7 AI Mental Health Conversation & Secure Doctor-Student Communications")
+@Tag(name = "AI Chat Assistant & Direct Healthcare Messaging", description = "24/7 AI Mental Health Conversation & Secure Doctor/Counselor Communications")
 public class ChatController {
 
     private final AiOrchestratorService aiOrchestrator;
 
-    // In-memory message store for direct doctor-student chat (Can be replaced with a JPA Repository/Entity later)
-    private static final Map<Long, List<ChatMessageDto>> directChatStorage = new ConcurrentHashMap<>();
+    // Completely separated in-memory storage maps for Doctor and Counselor chats
+    private static final Map<Long, List<ChatMessageDto>> doctorChatStorage = new ConcurrentHashMap<>();
+    private static final Map<Long, List<ChatMessageDto>> counselorChatStorage = new ConcurrentHashMap<>();
 
     @Operation(
         summary = "Process student message",
@@ -53,16 +54,21 @@ public class ChatController {
         log.info("Received AI chat request for Student ID: {} at Location: [{}] with Message: {}",
                  studentId, location, cleanedMessage);
 
-        // Pass location parameter to orchestrator
         String response = aiOrchestrator.processStudentMessage(studentId, cleanedMessage, location);
-
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get direct chat history for a student")
-    @GetMapping("/history")
-    public ResponseEntity<List<ChatMessageDto>> getChatHistory(@RequestParam Long studentId) {
-        List<ChatMessageDto> history = directChatStorage.getOrDefault(studentId, new ArrayList<>());
+    @Operation(summary = "Get direct chat history with Doctor for a student")
+    @GetMapping("/doctor-history")
+    public ResponseEntity<List<ChatMessageDto>> getDoctorChatHistory(@RequestParam Long studentId) {
+        List<ChatMessageDto> history = doctorChatStorage.getOrDefault(studentId, new ArrayList<>());
+        return ResponseEntity.ok(history);
+    }
+
+    @Operation(summary = "Get direct chat history with Counselor for a student")
+    @GetMapping("/counselor-history")
+    public ResponseEntity<List<ChatMessageDto>> getCounselorChatHistory(@RequestParam Long studentId) {
+        List<ChatMessageDto> history = counselorChatStorage.getOrDefault(studentId, new ArrayList<>());
         return ResponseEntity.ok(history);
     }
 
@@ -72,18 +78,32 @@ public class ChatController {
             @RequestParam Long studentId,
             @RequestBody String message) {
 
-        String cleanedMessage = (message != null && !message.trim().isEmpty())
-                ? message.trim().replaceAll("^\"|\"$", "")
-                : "";
-
+        String cleanedMessage = cleanMessage(message);
         if (cleanedMessage.isEmpty()) {
             return ResponseEntity.badRequest().body("Message cannot be empty");
         }
 
         log.info("Student ID: {} sending direct message to doctor: {}", studentId, cleanedMessage);
-        saveMessage(studentId, "STUDENT", cleanedMessage);
+        saveMessage(doctorChatStorage, studentId, "STUDENT", cleanedMessage);
 
         return ResponseEntity.ok("Message sent to doctor.");
+    }
+
+    @Operation(summary = "Send message from student directly to counselor")
+    @PostMapping("/student-to-counselor")
+    public ResponseEntity<String> studentToCounselorMessage(
+            @RequestParam Long studentId,
+            @RequestBody String message) {
+
+        String cleanedMessage = cleanMessage(message);
+        if (cleanedMessage.isEmpty()) {
+            return ResponseEntity.badRequest().body("Message cannot be empty");
+        }
+
+        log.info("Student ID: {} sending direct message to counselor: {}", studentId, cleanedMessage);
+        saveMessage(counselorChatStorage, studentId, "STUDENT", cleanedMessage);
+
+        return ResponseEntity.ok("Message sent to counselor.");
     }
 
     @Operation(summary = "Send message from doctor to student")
@@ -92,32 +112,52 @@ public class ChatController {
             @RequestParam Long studentId,
             @RequestBody String message) {
 
-        String cleanedMessage = (message != null && !message.trim().isEmpty())
-                ? message.trim().replaceAll("^\"|\"$", "")
-                : "";
-
+        String cleanedMessage = cleanMessage(message);
         if (cleanedMessage.isEmpty()) {
             return ResponseEntity.badRequest().body("Message cannot be empty");
         }
 
         log.info("Doctor sending secure message to Student ID: {}: {}", studentId, cleanedMessage);
-        saveMessage(studentId, "DOCTOR", cleanedMessage);
+        saveMessage(doctorChatStorage, studentId, "DOCTOR", cleanedMessage);
 
         return ResponseEntity.ok("Doctor message dispatched securely.");
     }
 
-    private synchronized void saveMessage(Long studentId, String sender, String text) {
-        directChatStorage.putIfAbsent(studentId, new ArrayList<>());
+    @Operation(summary = "Send message from counselor to student")
+    @PostMapping("/counselor-send")
+    public ResponseEntity<String> counselorSendMessage(
+            @RequestParam Long studentId,
+            @RequestBody String message) {
+
+        String cleanedMessage = cleanMessage(message);
+        if (cleanedMessage.isEmpty()) {
+            return ResponseEntity.badRequest().body("Message cannot be empty");
+        }
+
+        log.info("Counselor sending secure message to Student ID: {}: {}", studentId, cleanedMessage);
+        saveMessage(counselorChatStorage, studentId, "COUNSELOR", cleanedMessage);
+
+        return ResponseEntity.ok("Counselor message dispatched securely.");
+    }
+
+    private String cleanMessage(String message) {
+        return (message != null && !message.trim().isEmpty())
+                ? message.trim().replaceAll("^\"|\"$", "")
+                : "";
+    }
+
+    private synchronized void saveMessage(Map<Long, List<ChatMessageDto>> storage, Long studentId, String sender, String text) {
+        storage.putIfAbsent(studentId, new ArrayList<>());
         ChatMessageDto dto = new ChatMessageDto();
         dto.setSender(sender);
         dto.setMessage(text);
         dto.setTimestamp(LocalDateTime.now().toString());
-        directChatStorage.get(studentId).add(dto);
+        storage.get(studentId).add(dto);
     }
 
     @Data
     public static class ChatMessageDto {
-        private String sender; // "STUDENT", "DOCTOR", or "AI"
+        private String sender; // "STUDENT", "DOCTOR", "COUNSELOR", or "AI"
         private String message;
         private String timestamp;
     }

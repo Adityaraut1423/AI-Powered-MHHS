@@ -3,6 +3,7 @@ package com.aadiandjava.controller;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,11 @@ import com.aadiandjava.repository.DoctorRepository;
 import com.aadiandjava.repository.EmergencyContactRepository;
 import com.aadiandjava.repository.StudentUserRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -37,6 +41,9 @@ public class AuthController {
     private final DoctorRepository doctorRepository;
     private final EmergencyContactRepository emergencyContactRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // In-memory store for OTPs (Email -> OTP code)
+    private static final Map<String, String> otpStorage = new ConcurrentHashMap<>();
 
     @PostMapping("/register")
     @Transactional
@@ -156,5 +163,85 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password"));
+    }
+
+    @Operation(summary = "Request Password Reset OTP")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String role = request.get("role");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
+        }
+
+        boolean userExists = false;
+        if ("ROLE_STUDENT".equalsIgnoreCase(role)) {
+            userExists = studentUserRepository.findByEmail(email).isPresent();
+        } else if ("ROLE_COUNSELOR".equalsIgnoreCase(role)) {
+            userExists = counselorRepository.findByEmail(email).isPresent();
+        } else if ("ROLE_DOCTOR".equalsIgnoreCase(role)) {
+            userExists = doctorRepository.findByEmail(email).isPresent();
+        } else {
+            userExists = studentUserRepository.findByEmail(email).isPresent();
+        }
+
+        if (!userExists) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Email address not found!"));
+        }
+
+        // Generate 6-digit random OTP
+        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
+        otpStorage.put(email, otp);
+
+        log.info("🔐 PASSWORD RESET OTP for [{}]: [{}]", email, otp);
+
+        return ResponseEntity.ok(Map.of("message", "OTP sent successfully. Check server logs for testing code."));
+    }
+
+    @Operation(summary = "Verify OTP and Reset Password")
+    @PostMapping("/reset-password")
+    @Transactional
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+        String newPassword = request.get("newPassword");
+        String role = request.get("role");
+
+        if (email == null || otp == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "All fields are required"));
+        }
+
+        String storedOtp = otpStorage.get(email);
+        if (storedOtp == null || !storedOtp.equals(otp)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired OTP"));
+        }
+
+        if ("ROLE_STUDENT".equalsIgnoreCase(role) || role == null) {
+            Optional<StudentUser> studentOpt = studentUserRepository.findByEmail(email);
+            if (studentOpt.isPresent()) {
+                StudentUser student = studentOpt.get();
+                student.setPassword(passwordEncoder.encode(newPassword));
+                studentUserRepository.save(student);
+            }
+        } else if ("ROLE_COUNSELOR".equalsIgnoreCase(role)) {
+            Optional<Counselor> counselorOpt = counselorRepository.findByEmail(email);
+            if (counselorOpt.isPresent()) {
+                Counselor counselor = counselorOpt.get();
+                counselor.setPassword(newPassword);
+                counselorRepository.save(counselor);
+            }
+        } else if ("ROLE_DOCTOR".equalsIgnoreCase(role)) {
+            Optional<Doctor> doctorOpt = doctorRepository.findByEmail(email);
+            if (doctorOpt.isPresent()) {
+                Doctor doctor = doctorOpt.get();
+                doctor.setPassword(newPassword);
+                doctorRepository.save(doctor);
+            }
+        }
+
+        otpStorage.remove(email);
+
+        return ResponseEntity.ok(Map.of("message", "Password reset successfully! You can now sign in."));
     }
 }

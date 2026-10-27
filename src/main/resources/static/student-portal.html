@@ -828,7 +828,7 @@
         if (!chatBox) return;
 
         try {
-            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            const res = await fetch(`${BASE_URL}/chat/doctor-history?studentId=${studentId}`);
             if (res.ok) {
                 const messages = await res.json();
                 if (!messages || messages.length === 0) {
@@ -856,7 +856,7 @@
         if (!chatBox) return;
 
         try {
-            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            const res = await fetch(`${BASE_URL}/chat/counselor-history?studentId=${studentId}`);
             if (res.ok) {
                 const messages = await res.json();
                 if (!messages || messages.length === 0) {
@@ -919,7 +919,7 @@
         chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
-            await fetch(`${BASE_URL}/chat/student-to-doctor?studentId=${studentId}`, {
+            await fetch(`${BASE_URL}/chat/student-to-counselor?studentId=${studentId}`, {
                 method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text
             });
             loadStudentCounselorChat();
@@ -1128,7 +1128,10 @@
         loadMoodAnalytics();
     }
 
-    function handleLogout() { localStorage.removeItem('student_user'); window.location.reload(); }
+    function handleLogout() { 
+        localStorage.removeItem('student_user'); 
+        window.location.href = 'index.html'; 
+    }
 
     function showSection(sectionId) {
         document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));

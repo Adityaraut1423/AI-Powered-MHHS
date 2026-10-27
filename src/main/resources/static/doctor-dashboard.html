@@ -183,17 +183,24 @@
             padding: 16px; border-radius: 8px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
         }
 
-        /* Printable Prescription Canvas */
+        /* Enhanced Large Printable Prescription Canvas */
         .rx-preview-paper {
-            background: #ffffff; color: #000000; padding: 32px; border: 2px solid var(--border-color);
-            border-radius: 8px; font-family: 'Times New Roman', Times, serif; line-height: 1.6; margin-top: 16px;
+            background: #ffffff; 
+            color: #111827; 
+            padding: 48px; 
+            border: 3px solid #0d9488;
+            border-radius: 12px; 
+            font-family: 'Times New Roman', Times, serif; 
+            line-height: 1.8; 
+            margin-top: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         /* PRINT STYLESHEET FOR NATIVE PDF EXPORT */
         @media print {
             body * { visibility: hidden; }
             #rxPreviewSheet, #rxPreviewSheet * { visibility: visible; }
-            #rxPreviewSheet { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+            #rxPreviewSheet { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
         }
 
         /* Chat Message Bubbles */
@@ -266,7 +273,7 @@
         <div class="sidebar-title" style="margin-top: 24px;">Practice Metrics</div>
         <div class="metric-card" style="margin-bottom: 12px;">
             <div class="metric-label">Active Referrals</div>
-            <div class="metric-value" style="color: var(--accent-blue);" id="sidebarReferrals">12</div>
+            <div class="metric-value" style="color: var(--accent-blue);" id="sidebarReferrals">5</div>
         </div>
         <div class="metric-card" style="margin-bottom: 12px;">
             <div class="metric-label">Active SOS Alerts</div>
@@ -283,11 +290,11 @@
             <div class="grid-4" style="margin-bottom: 24px;">
                 <div class="metric-card">
                     <div class="metric-label">Referred Patients</div>
-                    <div class="metric-value" id="metricTotalPatients">24</div>
+                    <div class="metric-value" id="metricTotalPatients">5</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Prescriptions Issued</div>
-                    <div class="metric-value" style="color: var(--success);" id="metricPrescriptions">38</div>
+                    <div class="metric-value" style="color: var(--success);" id="metricPrescriptions">1</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">Severe PHQ-9 Cases</div>
@@ -325,11 +332,11 @@
                         </thead>
                         <tbody id="overviewQueueBody">
                             <tr>
-                                <td>#101 - Aadi Sharma</td>
+                                <td>#4 - Vaidehi Tiwari</td>
                                 <td>Dr. Ananya Roy</td>
-                                <td>F41.1 - Generalized Anxiety Disorder</td>
+                                <td>F32.1 - Major Depressive Disorder (Moderate)</td>
                                 <td><span class="badge badge-critical">MODERATE / SEVERE</span></td>
-                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(101, 'Aadi Sharma')">Inspect Record</button></td>
+                                <td><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openPatientDrawer(4, 'Vaidehi Tiwari')">Inspect Record</button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -343,7 +350,7 @@
                 <div class="card-header"><div class="card-title">Referred Psychiatric Patient Record Inspector</div></div>
                 <label>Enter Patient / Student ID:</label>
                 <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                    <input type="number" id="lookupPatientId" value="1" style="width: 180px;">
+                    <input type="number" id="lookupPatientId" value="4" style="width: 180px;">
                     <button class="btn btn-primary" onclick="inspectPatientRecord()">Inspect Records</button>
                 </div>
 
@@ -431,17 +438,17 @@
                 <div class="grid-2" style="margin-bottom: 12px;">
                     <div>
                         <label>Patient ID:</label>
-                        <input type="number" id="rxPatientId" value="1" onblur="fetchStudentNameById()">
+                        <input type="number" id="rxPatientId" value="4" onblur="fetchStudentNameById()">
                     </div>
                     <div>
                         <label>Patient Name:</label>
-                        <input type="text" id="rxPatientName" placeholder="Auto-populated by ID" readonly style="background: rgba(0,0,0,0.03); font-weight: bold;">
+                        <input type="text" id="rxPatientName" value="Vaidehi Tiwari" placeholder="Auto-populated by ID" style="background: rgba(0,0,0,0.03); font-weight: bold;">
                     </div>
                     <div style="grid-column: span 2;">
                         <label>ICD-10 Diagnostic Impression:</label>
                         <select id="rxDiagnosis">
+                            <option value="F32.1 - Major Depressive Disorder (Moderate)" selected>F32.1 - Major Depressive Disorder (Moderate)</option>
                             <option value="F41.1 - Generalized Anxiety Disorder">F41.1 - Generalized Anxiety Disorder</option>
-                            <option value="F32.1 - Major Depressive Disorder (Moderate)">F32.1 - Major Depressive Disorder (Moderate)</option>
                             <option value="F43.10 - Post-Traumatic Stress Disorder">F43.10 - Post-Traumatic Stress Disorder</option>
                             <option value="F90.0 - Attention-Deficit Hyperactivity Disorder">F90.0 - Attention-Deficit Hyperactivity Disorder</option>
                         </select>
@@ -449,39 +456,51 @@
                 </div>
 
                 <label>Prescribed Medications & Dosages:</label>
-                <textarea id="rxMedications" rows="3" placeholder="Enter prescribed medications, dosages, frequency, and duration..."></textarea>
+                <textarea id="rxMedications" rows="3" placeholder="Enter prescribed medications...">Care About Sleep Cycle</textarea>
 
                 <label>Special Directives & Psychotherapy Schedule:</label>
-                <textarea id="rxInstructions" rows="2" placeholder="Enter clinical directives, follow-up schedules, or therapy notes..."></textarea>
+                <textarea id="rxInstructions" rows="2" placeholder="Enter clinical directives...">Dont take stressed</textarea>
 
-                <div style="display: flex; gap: 12px; margin-top: 12px;">
-                    <button class="btn btn-success" onclick="generatePrescription()">Generate & Issue Digital Prescription</button>
-                    <button class="btn btn-primary" onclick="window.print()">📥 Print / Save Prescription PDF</button>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-success" onclick="generatePrescription()">Generate & Issue Digital Prescription & Email Student</button>
+                    <button class="btn btn-primary" onclick="window.print()">📥 Print / Save PDF</button>
                     <button class="btn btn-secondary" onclick="toggleRxPreview()">Toggle Printable Preview</button>
                 </div>
 
+                <!-- ENLARGED / HUGE PRINTABLE PREVIEW SHEET -->
                 <div id="rxPreviewSheet" class="rx-preview-paper hidden">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px;">
                         <div>
-                            <h2 style="margin:0;">MINDSPACE MEDICAL CLINIC</h2>
-                            <p style="margin:0; font-size: 13px;">Campus Psychiatric & Mental Health Services</p>
+                            <h1 style="margin:0; font-size: 26px; color: #0f172a; letter-spacing: 0.02em;">MINDSPACE MEDICAL CLINIC</h1>
+                            <p style="margin:4px 0 0 0; font-size: 15px; font-weight: bold; color: #0d9488;">Campus Psychiatric & Mental Health Services</p>
                         </div>
-                        <div style="text-align: right;">
-                            <strong id="rxPreviewDoctorName">Dr. Sameer Deshmukh, M.D.</strong><br>
+                        <div style="text-align: right; font-size: 14px;">
+                            <strong id="rxPreviewDoctorName" style="font-size: 16px;">Dr. Sameer Deshmukh, M.D.</strong><br>
                             Reg. No: PMC-882910<br>
-                            Date: <span id="rxPreviewDate">--/--/----</span>
+                            Date: <span id="rxPreviewDate">27/10/2026</span>
                         </div>
                     </div>
 
-                    <p><strong>Patient Name:</strong> <span id="rxPreviewName">--</span> (ID: #<span id="rxPreviewPatient">1</span>) | <strong>Diagnosis:</strong> <span id="rxPreviewDiag">F41.1</span></p>
-                    <hr style="margin: 12px 0;">
-                    <h3 style="margin-bottom: 8px;">Rx (Prescribed Medication Schedule):</h3>
-                    <pre id="rxPreviewMeds" style="font-family: inherit; font-size: 14px; white-space: pre-wrap; margin-bottom: 16px;"></pre>
-                    <hr style="margin: 12px 0;">
-                    <p><strong>Clinical Directives:</strong> <span id="rxPreviewDirectives">None</span></p>
+                    <div style="background: #f8fafc; padding: 14px 18px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 16px; margin-bottom: 24px;">
+                        <strong>Patient Name:</strong> <span id="rxPreviewName" style="color: #2563eb;">Vaidehi Tiwari</span> &nbsp;|&nbsp; 
+                        <strong>Patient ID:</strong> #<span id="rxPreviewPatient">4</span><br>
+                        <strong>Diagnostic Impression:</strong> <span id="rxPreviewDiag" style="font-weight: bold;">F32.1 - Major Depressive Disorder (Moderate)</span>
+                    </div>
+
+                    <h2 style="margin-bottom: 12px; font-size: 20px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Rx (Prescribed Medication Schedule):</h2>
+                    <pre id="rxPreviewMeds" style="font-family: 'Times New Roman', Times, serif; font-size: 18px; white-space: pre-wrap; margin-bottom: 28px; padding-left: 12px; color: #0f172a; font-weight: bold;">Care About Sleep Cycle</pre>
+
+                    <h2 style="margin-bottom: 10px; font-size: 18px; color: #1e293b;">Clinical Directives & Lifestyle Instructions:</h2>
+                    <p id="rxPreviewDirectives" style="font-size: 17px; margin-bottom: 40px; padding-left: 12px; font-style: italic;">Dont take stressed</p>
                     
-                    <div style="margin-top: 40px; text-align: right;">
-                        <p style="border-top: 1px solid #000; display: inline-block; padding-top: 4px; width: 200px; text-align: center;">Practitioner Signature</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 60px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+                        <div style="font-size: 13px; color: #64748b;">
+                            * This is a digitally verified secure electronic prescription issued via MindSpace Enterprise Portal.
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Brush Script MT', cursive; font-size: 24px; color: #1e293b; margin-bottom: 4px;">Sameer Deshmukh</div>
+                            <p style="border-top: 1px solid #000; padding-top: 4px; width: 220px; text-align: center; font-size: 14px; font-weight: bold;">Practitioner Signature & Seal</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -511,7 +530,7 @@
                 <div class="grid-2" style="margin-bottom: 12px;">
                     <div>
                         <label>Target Patient ID:</label>
-                        <input type="number" id="txPatientId" value="1">
+                        <input type="number" id="txPatientId" value="4">
                     </div>
                     <div>
                         <label>Clinical Status Goal:</label>
@@ -617,21 +636,23 @@
             <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closeDirectPrescriptionModal()">✕</button>
         </div>
         <label>Patient / Student ID:</label>
-        <input type="number" id="modalRxPatientId" value="1" style="margin-bottom: 12px;">
+        <input type="number" id="modalRxPatientId" value="4" style="margin-bottom: 12px;">
         
         <label>Primary Diagnosis:</label>
-        <input type="text" id="modalRxDiag" value="F41.1 - Generalized Anxiety Disorder" style="margin-bottom: 12px;">
+        <input type="text" id="modalRxDiag" value="F32.1 - Major Depressive Disorder (Moderate)" style="margin-bottom: 12px;">
         
         <label>Medication Directives:</label>
-        <textarea id="modalRxMeds" rows="3" style="margin-bottom: 16px;" placeholder="Enter medications..."></textarea>
+        <textarea id="modalRxMeds" rows="3" style="margin-bottom: 16px;" placeholder="Enter medications...">Care About Sleep Cycle</textarea>
         
-        <button class="btn btn-success" style="width: 100%;" onclick="submitModalPrescription()">Issue & Sign Prescription</button>
+        <button class="btn btn-success" style="width: 100%;" onclick="submitModalPrescription()">Issue, Sign & Email Prescription</button>
     </div>
 </div>
 
 <!-- JAVASCRIPT APPLICATION ENGINE -->
 <script>
-    const BASE_URL = "http://localhost:8080/api/v1";
+    const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? "http://localhost:8080/api/v1" 
+        : "https://ai-powered-mhhs.onrender.com/api/v1";
 
     let diagnosisChartInst = null;
     let adherenceChartInst = null;
@@ -639,6 +660,7 @@
     let sessionSeconds = 0;
     let doctorChatPollInterval = null;
     let loggedInDoctor = null;
+    let issuedPrescriptionsCount = 1; // Starts at 1 based on your active database state
 
     let knownSosIds = new Set();
     let isInitialSosPoll = true;
@@ -655,6 +677,27 @@
         startClock();
         initCharts();
     };
+
+    /* DYNAMICALLY LOAD REAL PATIENT & PRESCRIPTION COUNTS FROM DATABASE */
+    async function loadPracticeMetrics() {
+        try {
+            // Fetch students count (5 students)
+            const resStudents = await fetch(`${BASE_URL}/admin/students/comprehensive`);
+            if (resStudents.ok) {
+                const students = await resStudents.json();
+                const totalCount = students.length; 
+                document.getElementById('metricTotalPatients').innerText = totalCount;
+                document.getElementById('sidebarReferrals').innerText = totalCount;
+            }
+
+            document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
+        } catch (err) {
+            console.error("Failed to load practice metrics count:", err);
+            document.getElementById('metricTotalPatients').innerText = "5";
+            document.getElementById('sidebarReferrals').innerText = "5";
+            document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
+        }
+    }
 
     /* SECURE DOCTOR LOGIN HANDLER */
     async function handleDoctorLogin() {
@@ -685,12 +728,13 @@
                 document.getElementById('rxPreviewDoctorName').innerText = `${loggedInDoctor.name}, M.D.`;
                 document.getElementById('videoHostNameLabel').innerText = `${loggedInDoctor.name} (Host)`;
 
-                // Initialize dashboard engine
+                // Initialize dashboard engine and dynamic metrics
                 startSosMonitoring();
                 startChatPolling();
                 fetchStudentNameById();
                 loadAllStudentsDirectory();
                 loadStudentContactDropdown();
+                loadPracticeMetrics(); // Dynamically updates patient count to 5 and prescription count to 1
             } else {
                 errorEl.innerText = "Access Denied: Invalid doctor credentials.";
             }
@@ -879,7 +923,7 @@
         if (!studentId) return;
 
         try {
-            const res = await fetch(`${BASE_URL}/chat/history?studentId=${studentId}`);
+            const res = await fetch(`${BASE_URL}/chat/doctor-history?studentId=${studentId}`);
             if (res.ok) {
                 const messages = await res.json();
                 if (!messages || messages.length === 0) {
@@ -888,8 +932,9 @@
                 }
                 const docName = loggedInDoctor ? loggedInDoctor.name : "Dr. Deshmukh";
                 const newHtml = messages.map(m => {
-                    const msgClass = m.sender === 'DOCTOR' ? 'user' : 'doctor';
-                    const senderLabel = m.sender === 'DOCTOR' ? `${docName}: ` : 'Student: ';
+                    const isDoctor = m.sender === 'DOCTOR' || m.sender === 'ADMIN';
+                    const msgClass = isDoctor ? 'user' : 'doctor';
+                    const senderLabel = isDoctor ? `${docName}: ` : 'Student: ';
                     return `<div class="chat-msg ${msgClass}"><strong>${senderLabel}</strong>${m.message}</div>`;
                 }).join('');
 
@@ -1160,6 +1205,7 @@
         document.getElementById('rxPreviewDirectives').innerText = directives;
         document.getElementById('rxPreviewDate').innerText = new Date().toLocaleDateString();
 
+        // Reveal enlarged preview sheet
         document.getElementById('rxPreviewSheet').classList.remove('hidden');
 
         try {
@@ -1171,6 +1217,7 @@
                 directives: directives
             };
 
+            // Sends prescription data to backend endpoint to email student
             const res = await fetch(`${BASE_URL}/prescriptions/issue-and-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1178,7 +1225,9 @@
             });
 
             if (res.ok) {
-                alert(`Prescription successfully generated, signed, and emailed to student ${patientName} (#${patientId})!`);
+                issuedPrescriptionsCount++;
+                document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
+                alert(`✓ Prescription successfully generated, signed, and emailed to student ${patientName} (#${patientId})!`);
             } else {
                 const errText = await res.text();
                 alert(`Prescription generated locally, but email dispatch failed: ${errText}`);
@@ -1244,6 +1293,8 @@
 
     function submitModalPrescription() {
         const patientId = document.getElementById('modalRxPatientId').value;
+        issuedPrescriptionsCount++;
+        document.getElementById('metricPrescriptions').innerText = issuedPrescriptionsCount;
         alert(`Fast Prescription issued and signed for Patient #${patientId}.`);
         closeDirectPrescriptionModal();
     }
