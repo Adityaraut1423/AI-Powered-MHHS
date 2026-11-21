@@ -152,7 +152,6 @@
             <div class="nav-item active" onclick="showSection('chatSec')">🤖 24/7 AI Voice Chat</div>
             <div class="nav-item" onclick="showSection('doctorChatSec')">🩺 Doctor Direct Chat & Call</div>
             <div class="nav-item" onclick="showSection('counselorChatSec')">💬 Talk with Counselor</div>
-            <div class="nav-item" onclick="showSection('predictiveAiSec')">🧠 Predictive AI & Biometrics</div>
             <div class="nav-item" onclick="showSection('moodSec')">📊 Mood Log & Graph</div>
             <div class="nav-item" onclick="showSection('gratitudeSec')">📖 Gratitude & Stress Relief</div>
             <div class="nav-item" onclick="showSection('screeningSec')">📋 Clinical Screening (PHQ-9)</div>
@@ -261,63 +260,7 @@
             </div>
         </div>
 
-        <!-- 1.6 ADVANCED CLINICAL & PREDICTIVE AI MODULES -->
-        <div id="predictiveAiSec" class="content-section hidden">
-            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 28px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);">
-                <h2 style="margin: 0; font-size: 22px; font-weight: 700;">🧠 Clinical Predictive AI & Biometric Suite</h2>
-                <p style="margin: 6px 0 0 0; font-size: 13px; color: #94a3b8;">Real-time health telemetry syncing, 14-day mood forecasting, and cognitive behavioral therapy (CBT) reframing.</p>
-            </div>
-
-            <div class="grid-2" style="margin-bottom: 24px;">
-                <div class="card" style="border-radius: 16px;">
-                    <div class="card-header"><div class="card-title">⌚ Smartwatch & Biometric Telemetry</div></div>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Synced with Apple Health / Google Fit framework.</p>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
-                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
-                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Resting Heart Rate</div>
-                            <div id="bioRhr" style="font-size: 24px; font-weight: 800; color: var(--danger); margin-top: 4px;">72 bpm</div>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
-                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Heart Rate Variability</div>
-                            <div id="bioHrv" style="font-size: 24px; font-weight: 800; color: var(--success); margin-top: 4px;">65 ms</div>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
-                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Sleep Cycle Avg</div>
-                            <div id="bioSleep" style="font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 4px;">6.2 hrs</div>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.02); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); text-align: center;">
-                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Daily Step Count</div>
-                            <div id="bioSteps" style="font-size: 24px; font-weight: 800; color: var(--accent-teal); margin-top: 4px;">7,420</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary" onclick="syncWearableData()">🔄 Sync Wearable Telemetry</button>
-                </div>
-
-                <div class="card" style="border-radius: 16px;">
-                    <div class="card-header"><div class="card-title">🤖 JARVIS AI CBT Reframing Assistant</div></div>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Dissect cognitive distortions and receive real-time reframes.</p>
-                    
-                    <label>Describe your negative thought or stressor:</label>
-                    <textarea id="cbtInputText" rows="3" placeholder="e.g., I failed my quiz today, so I am going to fail the entire semester..."></textarea>
-                    
-                    <button class="btn btn-primary" style="margin-top: 12px;" onclick="runCbtReframing()">Analyze & Reframe Thought ✨</button>
-                    
-                    <div id="cbtOutputBox" class="terminal-box" style="height: 110px; margin-top: 12px; font-size: 11px;">
-                        JARVIS cognitive restructuring engine ready...
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="border-radius: 16px;">
-                <div class="card-header">
-                    <div class="card-title">📈 14-Day Predictive Mood Forecasting & Risk Scoring</div>
-                    <span style="font-size: 11px; font-weight: 700; color: var(--warning); background: #fef3c7; padding: 4px 10px; border-radius: 20px;">ML Risk Analysis Active</span>
-                </div>
-                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Machine learning projection based on sleep telemetry, biometric HRV variance, and historical check-ins.</p>
-                <canvas id="predictiveMoodChart" style="width:100%; max-height:260px;"></canvas>
-            </div>
-        </div>
+      
 
         <!-- 2. MOOD LOG & ANALYTICS WITH AUTOMATIC DETECT & AUTO-SAVE -->
         <div id="moodSec" class="content-section hidden">
